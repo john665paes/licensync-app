@@ -4,6 +4,6 @@
     "strict": true
   },
   
-    "include" : ["./src/index.d.ts"]
+    "include" : ["src/@types/img.d.ts"]
   
 }

@@ -1,17 +1,13 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import {Loginscreen} from './src/screens/login/';
-
+import Login from './src/screens/login/login';
+import {NativeBaseProvider, StatusBar} from 'native-base'
+import {TEMAS} from './src/estilos/temas'
 export default function App() {
-  return (<Loginscreen/>
+  return (
+  <NativeBaseProvider theme={TEMAS}>
+    <StatusBar backgroundColor={TEMAS.colors.verde} />
+    <Login/>
+
+  </NativeBaseProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
