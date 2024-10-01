@@ -7,8 +7,8 @@ export default function App() {
   return (
   <NativeBaseProvider theme={TEMAS}>
     <StatusBar backgroundColor={TEMAS.colors.verde} />
-    {/* <Cadastro/> */}
-    <Login/>
+    <Cadastro/>
+    {/* <Login/> */}
 
   </NativeBaseProvider>
   );
