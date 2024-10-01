@@ -4,7 +4,7 @@ import { VStack, Image, Text, Box, FormControl,
 import React from "react";
   
   
-  export default function Cadastro() {
+  export default function IndexADM() {
     return (
       <VStack flex={1} alignItems="center" padding={5}>
         {/* <Image size={100} width={150} marginTop="18" source={Logo} alt="background Login" /> */}

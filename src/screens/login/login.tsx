@@ -1,60 +1,31 @@
 import { VStack, Image, Text, Box, FormControl, 
   Input, Button, Link } from "native-base";
 import Logo from '../../assets/imgs/login.png'
+import React from "react";
+import { Titulo } from "../../componentes/titulo";
+import { Botoes } from "../../componentes/botoes";
+import { Inputform } from "../../componentes/formulario";
 
 
 export default function Login() {
   return (
     <VStack flex={1} alignItems="center" padding={5}>
       <Image size={100} width={190} marginTop={40} source={Logo} alt="background Login" />
-      <Text 
-        fontSize="2xl"
-        fontWeight="bold"
-        color="verde"
-        textAlign="center"
-        mt={5}
-        > Faça o login
-      </Text>
+     
+      <Titulo>
+          Faça login em sua conta
+      </Titulo>
+      
       <Box >
-        <FormControl marginTop={3}>
-          <FormControl.Label></FormControl.Label>
-          <Input 
-          textAlign={'center'}
-          placeholder="Insira seu e-mail" 
-          size='lg' 
-          width="100%"
-          borderRadius='lg'
-          borderColor={'verde'}
-          borderWidth={3}
-          bgColor={'branco'}
-          shadow={5}
-          />
-        </FormControl>
-        <FormControl marginTop={3}>
-          <FormControl.Label></FormControl.Label>
-          <Input 
-          textAlign={'center'}
-          placeholder="Insira sua senha" 
-          size='lg' 
-          width="100%"
-          borderRadius='lg'
-          borderColor={'verde'}
-          borderWidth={3}
-          bgColor={'branco'}
-          shadow={5}
-          />
-        </FormControl>
+        <Inputform placeholder="Digite seu e-mail"/>
+        <Inputform placeholder="Digite sua senha"/>
+
       </Box>
-      {/* BOTÃO DE ENTRAR */}
-      <Button
-      width="100%"
-      bgColor={'verde'}
-      borderRadius='lg'
-      mt={5}>
-        Entrar
-      </Button>
+     
+      <Botoes>
+          Entrar
+      </Botoes>
       <Link href="" mt={6}>Esqueceu sua senha?</Link>
     </VStack>
-    
   );
 }
