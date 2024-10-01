@@ -1,4 +1,5 @@
-import { VStack, Image, Text, Box, FormControl, Input, Button, Link } from "native-base";
+import { VStack, Image, Text, Box, FormControl, 
+  Input, Button, Link } from "native-base";
 import Logo from '../../assets/imgs/login.png'
 
 
@@ -14,10 +15,11 @@ export default function Login() {
         mt={5}
         > Faça o login
       </Text>
-      <Box>
+      <Box >
         <FormControl marginTop={3}>
-          <FormControl.Label>E-mail</FormControl.Label>
+          <FormControl.Label></FormControl.Label>
           <Input 
+          textAlign={'center'}
           placeholder="Insira seu e-mail" 
           size='lg' 
           width="100%"
@@ -29,8 +31,9 @@ export default function Login() {
           />
         </FormControl>
         <FormControl marginTop={3}>
-          <FormControl.Label>Senha</FormControl.Label>
+          <FormControl.Label></FormControl.Label>
           <Input 
+          textAlign={'center'}
           placeholder="Insira sua senha" 
           size='lg' 
           width="100%"
@@ -47,7 +50,7 @@ export default function Login() {
       width="100%"
       bgColor={'verde'}
       borderRadius='lg'
-      mt={3}>
+      mt={5}>
         Entrar
       </Button>
       <Link href="" mt={6}>Esqueceu sua senha?</Link>
