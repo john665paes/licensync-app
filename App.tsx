@@ -10,7 +10,7 @@ export default function App() {
     <StatusBar backgroundColor={TEMAS.colors.verde} />
     <Cadastro/>
     {/* <IndexADM/> */}
-    {/* <Login> */}
+    {/* <Login/> */}
 
   </NativeBaseProvider>
   );
