@@ -3,7 +3,9 @@ import React from "react"
 import { ReactNode } from "react"
 
 interface InputformProps extends IFormControlProps{
-    children: ReactNode
+    placeholder?: string
+    children?: ReactNode
+    onChangeText(texto: string): void
 }
 export function Inputform({children, ...rest}: InputformProps){
     return(
