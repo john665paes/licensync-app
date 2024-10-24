@@ -1,19 +1,28 @@
-import { FormControl, IFormControlProps, Input} from "native-base"
+import { FormControl, Input} from "native-base"
 import React from "react"
 import { ReactNode } from "react"
 
-interface InputformProps extends IFormControlProps{
-    placeholder?: string
+interface InputformProps {
+    placeholder?: string;
+    label?: string;
+    secureTextEntry?: boolean;
     children?: ReactNode
-    onChangeText(texto: string): void
+    onChangeText(texto: string): void;
 }
-export function Inputform({children, ...rest}: InputformProps){
+
+export function InputTexto({
+    label,
+    placeholder,
+    secureTextEntry = false
+    } : InputformProps ) : JSX.Element{
+
     return(
         <FormControl marginTop={3}>
-          <FormControl.Label></FormControl.Label>
+          {label &&<FormControl.Label>{label}</FormControl.Label>}
           <Input 
             textAlign={'center'}
-            placeholder="" 
+            label=""
+            placeholder={placeholder}
             size='lg' 
             width="100%"
             borderRadius='lg'
@@ -21,8 +30,8 @@ export function Inputform({children, ...rest}: InputformProps){
             borderWidth={3}
             bgColor={'branco'}
             shadow={5}
-            {...rest}/> 
-            {children}
+            /> 
+           
         </FormControl>
       
     )
