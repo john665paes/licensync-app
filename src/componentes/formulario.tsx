@@ -24,7 +24,6 @@ export function InputTexto({
             label=""
             placeholder={placeholder}
             size='lg' 
-            width="100%"
             borderRadius='lg'
             borderColor={'verde'}
             borderWidth={3}

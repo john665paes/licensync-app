@@ -10,7 +10,6 @@ export function Botoes({children, onPress, ...rest}: BotoesProps){
     return(
         <Button
             onPress={onPress}
-            //width="100%"
             size='lg' 
             width="100%"
             height={50}

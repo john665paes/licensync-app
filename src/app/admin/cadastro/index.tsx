@@ -37,16 +37,17 @@ export default function Cadastro() {
     <VStack flex={1} alignItems="center" padding={5}>
       {/* <Image size={100} width={150} marginTop="18" source={Logo} alt="background Login" /> */}
       
-     
+        
           <Titulo marginTop={"24"}  color={'verde'}>Cadatro de Cliente</Titulo>
-          <InputTexto label="Nome" placeholder="Nome"></InputTexto>
-          <InputTexto label="CNPJ" placeholder="CNPJ" mt={"1"}></InputTexto>
-          <InputTexto label="Endereço" placeholder="Endereço" mt={"1"}></InputTexto>
-          <InputTexto label="Cep" placeholder="Cep" mt={"1"}></InputTexto>
-          <InputTexto label="Numero" placeholder="Numero" mt={"1"}></InputTexto>
-
+          <InputTexto label="Empresa:" placeholder="Nome"></InputTexto>
+          <InputTexto label="CNPJ:" placeholder="CNPJ" mt={"1"}></InputTexto>
+          <InputTexto label="Endereço:" placeholder="Endereço" mt={"1"}></InputTexto>
+          <Box flexDirection="row"  justifyContent="space-between">         
+            <InputTexto bgcolor={'cinza'}label="Cep:" placeholder="Cep" mt={"1"}  width="50%"></InputTexto>
+            <InputTexto label="Numero:" placeholder="Numero" mt={"1"}  width="50%"></InputTexto>
+          </Box>
           <Botoes>Salvar Cadastro</Botoes>
-          <Botoes>Cancelar</Botoes>
+          <Botoes backgroundColor={'cinza'}>Cancelar</Botoes>
       </VStack>
       </>
   );
