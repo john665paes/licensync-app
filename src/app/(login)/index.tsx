@@ -1,37 +1,66 @@
 import { VStack, Image, Box, Link } from "native-base";
+import { useState } from "react";
 import Logo from '../../assets/imgs/login.png'
 import React from "react";
 import { Titulo } from "../../componentes/titulo";
 import { Botoes } from "../../componentes/botoes";
 import { InputTexto } from "../../componentes/formulario";
 import { Formik } from 'formik';
+import * as Yup from 'yup';
 import { router } from "expo-router";
 
 export default function Login() {
 
-  // ==========================================
-  const onSubmit = ({email, senha}) => {
-    console.log('Teste')
-    router.replace('/admin')
+  const [resultadoLogin, setResultadoLogin] = useState<null | 'logado' | 'falhou'>(null); 
+
+
+  const handleLogin = async({email, senha}: any) => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (email.trim() == 'teste@teste.com' && senha.trim() =='123')
+      setResultadoLogin('logado')
+    else setResultadoLogin('falhou');
   }
-  // ==========================================
+
+
   return (
     <VStack flex={1} alignItems="center" justifyContent="center " padding={5}>
       <Image size={100} width={190} marginTop={40} source={Logo} alt="background Login" />
-     
-      <Titulo>
-          Faça login em sua conta
-      </Titulo>
-
+   
       <Formik  
         initialValues={{email: '', senha: ''}}
-        onSubmit={onSubmit}
-      >
-        {({handleChange, handleSubmit}) => (
+        validationSchema={Yup.object().shape({
+          email: Yup.string().required('Informe o E-mail').email('E-mail não válido'),
+
+          senha: Yup.string().required('Informe sua senha').min(3, 'A senha precisa ter 3 caracteres'),
+        })}
+        onSubmit={handleLogin}>
+
+
+        {({errors,
+          touched,
+          handleBlur,
+          handleChange,
+          handleSubmit,
+          isSubmitting,}) => (
           <>
+                    
+            <Titulo>
+                Faça login em sua conta
+            </Titulo>
+
             <Box >
-              <InputTexto label="E-mail" placeholder="Digite seu e-mail" onChangeText={handleChange('email')}/>
-              <InputTexto label="Senha" placeholder="Insira sua senha" onChangeText={handleChange('senha')}/>
+              <InputTexto 
+              label="E-mail" 
+              placeholder="Digite seu e-mail" 
+              onBlur={handleBlur('email')}
+              onChangeText={handleChange('email')}/>
+              {errors.email && touched.email}
+
+              <InputTexto 
+              secureTextEntry 
+              label="Senha" 
+              placeholder="Insira sua senha" 
+              onChangeText={handleChange('senha')} />
 
               <Botoes onPress={handleSubmit}>
                 Entrar
