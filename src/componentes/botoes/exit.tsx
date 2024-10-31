@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import React from "react";
 import { Touchable, TouchableOpacity } from "react-native"
 import Svg, { Path, G} from 'react-native-svg';
 

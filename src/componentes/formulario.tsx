@@ -1,37 +1,47 @@
-import { FormControl, Input} from "native-base"
-import React from "react"
-import { ReactNode } from "react"
+import { TextInputProps } from 'react-native';
+import { FormControl, Input, theme } from "native-base";
+import React, { ChangeEvent } from "react";
+import { TEMAS } from '../estilos/temas';
 
-interface InputformProps {
-    placeholder?: string;
-    label?: string;
+interface InputformProps extends TextInputProps {
+    label: string;
+    placeholder: string;
+    onBlur?: (e: any) => void;
     secureTextEntry?: boolean;
-    children?: ReactNode
-    onChangeText(texto: string): void;
+    onChangeText?: (text: string) => void;
+    mt?: string;
+    bgcolor?: string;
+    width?: string;
 }
 
 export function InputTexto({
     label,
     placeholder,
-    secureTextEntry = false
-    } : InputformProps ) : JSX.Element{
+    onBlur,
+    onChangeText,
+    secureTextEntry,
+    ...props
+}: InputformProps): JSX.Element {
 
-    return(
+    return (
         <FormControl marginTop={3}>
-          {label &&<FormControl.Label>{label}</FormControl.Label>}
-          <Input 
-            textAlign={'center'}
-            label=""
-            placeholder={placeholder}
-            size='lg' 
-            borderRadius='lg'
-            borderColor={'verde'}
-            borderWidth={3}
-            bgColor={'branco'}
-            shadow={5}
-            /> 
-           
+            {label && <FormControl.Label>{label}</FormControl.Label>}
+            <Input
+                textAlign={'center'}
+                placeholder={placeholder}
+                size='lg'
+                mt={'0.5'}
+                borderRadius='lg'
+                borderColor={TEMAS.colors.verde}
+                borderWidth={3}
+                width={'265'}
+                bgColor={TEMAS.colors.branco}
+                shadow={5}
+                onBlur={onBlur}
+                onChangeText={onChangeText}
+                secureTextEntry={secureTextEntry}
+                {...props}
+            />
         </FormControl>
-      
     )
 };
