@@ -8,6 +8,7 @@ import { InputTexto } from "../../componentes/formulario";
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { router } from "expo-router";
+import {TEMAS} from '../../estilos/temas'
 
 export default function Login() {
 
@@ -52,6 +53,7 @@ export default function Login() {
 
             <Box >
               <InputTexto
+                width="300"
                 label="E-mail"
                 placeholder="Digite seu e-mail"
                 onBlur={handleBlur('email')}
@@ -62,6 +64,7 @@ export default function Login() {
               )}
 
               <InputTexto
+                width="300"
                 label="Senha"
                 placeholder="Insira sua senha"
                 onBlur={handleBlur('senha')}
@@ -81,7 +84,7 @@ export default function Login() {
                 <Text >Logado com sucesso</Text>
               )}
               {resultadoLogin == 'falhou' && (
-                <Text >Email ou senha incorreto</Text>
+                <Text textAlign={'center'} color={TEMAS.colors.red}>Email ou senha incorreto</Text>
               )}
             </Box>
 

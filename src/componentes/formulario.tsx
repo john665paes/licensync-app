@@ -1,6 +1,6 @@
 import { TextInputProps } from 'react-native';
 import { FormControl, Input, theme } from "native-base";
-import React, { ChangeEvent } from "react";
+import React from "react";
 import { TEMAS } from '../estilos/temas';
 
 interface InputformProps extends TextInputProps {
@@ -20,6 +20,7 @@ export function InputTexto({
     onBlur,
     onChangeText,
     secureTextEntry,
+    width,
     ...props
 }: InputformProps): JSX.Element {
 
@@ -34,7 +35,7 @@ export function InputTexto({
                 borderRadius='lg'
                 borderColor={TEMAS.colors.verde}
                 borderWidth={3}
-                width={'265'}
+                width={width}
                 bgColor={TEMAS.colors.branco}
                 shadow={5}
                 onBlur={onBlur}

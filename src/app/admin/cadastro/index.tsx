@@ -17,7 +17,7 @@ import Logo from '../../../assets/imgs/login.png'
 
 export default function Cadastro() {
   return (
-    <ScrollView>
+
     <>
       <Box
         height="20"
@@ -39,37 +39,42 @@ export default function Cadastro() {
         <View>
           {/* <BotaoSair /> */}
         </View>
-      </Box>     
-      
-      <VStack flex={1} alignSelf={"center"} padding={5}>      
-      
-      {<Image size={100} alignSelf={"center"}  width={150} marginTop="18" source={Logo} alt="background Login" />}
-      
-        <Titulo marginTop={"15"} color={TEMAS.colors.verde}>Cadatro de Cliente</Titulo>
-        <InputTexto label="Empresa:" 
-        placeholder="Nome"/>
+      </Box>
+      <ScrollView>
+        <VStack flex={1} padding={5}>
 
-        <InputTexto label="CNPJ:" 
-        placeholder="CNPJ"/>
+          {<Image size={100} alignSelf={'center'} width={150} marginTop="18" source={Logo} alt="background Login" />}
 
-        <InputTexto label="Endereço:" 
-        placeholder="Endereço"/>
+          <Titulo marginTop={"15"} color={TEMAS.colors.verde}>Cadatro de Cliente</Titulo>
+          <InputTexto label="Empresa:"
+            placeholder="Nome" />
 
-        {/*<Box flexDirection={"row"}>*/}
-          <InputTexto 
-          bgcolor={TEMAS.colors.cinza} 
-          label="CEP:" 
-          placeholder="CEP"/>
+          <InputTexto label="CNPJ:"
+            placeholder="CNPJ" />
 
-          <InputTexto 
-          label="Número:" 
-          placeholder="Número"/>
-        {/*</Box>*/}
-        
-        <Botoes onPress={() => console.log('Salvar Cadastro')}>Salvar Cadastro</Botoes>
-        <Botoes onPress={() => console.log('Cancelar')} backgroundColor={TEMAS.colors.cinza}>Cancelar</Botoes>
-      </VStack>
+          <InputTexto label="Endereço:"
+            placeholder="Endereço" />
+
+          <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
+            <Box marginRight={2}>
+              <InputTexto
+                width="180"
+                bgcolor={TEMAS.colors.cinza}
+                label="CEP:"
+                placeholder="CEP" />
+            </Box>
+            <Box>
+              <InputTexto
+                width="180"
+                label="Número:"
+                placeholder="Número" />
+            </Box>
+          </Box>
+
+          <Botoes onPress={() => console.log('Salvar Cadastro')}>Salvar Cadastro</Botoes>
+          <Botoes onPress={() => console.log('Cancelar')} backgroundColor={TEMAS.colors.cinza}>Cancelar</Botoes>
+        </VStack>
+      </ScrollView>
     </>
-    </ScrollView>
   );
 }
