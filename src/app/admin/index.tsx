@@ -50,7 +50,7 @@ export default function IndexADM() {
                     {<Image size={100} width={150} marginTop="18" source={Logo} alt="background Login" />}
 
 
-                    <Botoes onPress={() => console.log('Salvar Cadastro')} width="100%" >
+                    <Botoes onPress={() => router.push('/admin/clientes')} width="100%" >
                         Clientes
                     </Botoes>
 

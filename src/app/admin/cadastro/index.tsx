@@ -10,6 +10,8 @@ import { InputTexto } from "../../../componentes/formulario";
 import { Botoes } from "../../../componentes/botoes";
 import { View } from "react-native";
 import { BotaoVoltar } from "../../../componentes/botoes/back";
+import { BotaoSair } from "../../../componentes/botoes/exit";
+
 import { TEMAS } from "../../../estilos/temas";
 import Logo from '../../../assets/imgs/login.png'
 
@@ -20,6 +22,7 @@ export default function Cadastro() {
 
     <>
       <Box
+        alignItems={"center"}
         height="20"
         width="100%"
         flexDir={"row"}
@@ -31,13 +34,13 @@ export default function Cadastro() {
         </View>
 
         {/* TEXTO */}
-        <View style={{ flex: 1, }}>
-          <Text color={TEMAS.colors.branco} textAlign={"center"}>Cadastro</Text>
+        <View style={{ flex: 5, }}>
+          <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>Cadastro de Clientes</Text>
         </View>
 
         {/* SAIR */}
         <View>
-          {/* <BotaoSair /> */}
+          <BotaoSair />
         </View>
       </Box>
       <ScrollView>
@@ -45,14 +48,31 @@ export default function Cadastro() {
 
           {<Image size={100} alignSelf={'center'} width={150} marginTop="18" source={Logo} alt="background Login" />}
 
-          <Titulo marginTop={"15"} color={TEMAS.colors.verde}>Cadatro de Cliente</Titulo>
+          {/* <Titulo marginTop={"15"} color={TEMAS.colors.verde}>Cadatro de Cliente</Titulo> */}
           <InputTexto label="Empresa:"
             placeholder="Nome" />
 
           <InputTexto label="CNPJ:"
             placeholder="CNPJ" />
 
-          <InputTexto label="Endereço:"
+          <InputTexto label="Email:"
+            placeholder="E-mail" />
+
+          <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
+            <Box marginRight={2}>
+              <InputTexto
+                width="180"
+                bgcolor={TEMAS.colors.cinza}
+                label="Telefones:"
+                placeholder="CEP" />
+            </Box>
+            <Box>
+              <InputTexto
+                width="180"
+                label="   "
+                placeholder="telefone" />
+            </Box>
+          </Box><InputTexto label="Endereço:"
             placeholder="Endereço" />
 
           <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
@@ -68,6 +88,23 @@ export default function Cadastro() {
                 width="180"
                 label="Número:"
                 placeholder="Número" />
+            </Box>
+          </Box>
+          <InputTexto label="Complemento:"
+            placeholder="Complemento" />
+          <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
+            <Box marginRight={2}>
+              <InputTexto
+                width="180"
+                bgcolor={TEMAS.colors.cinza}
+                label="Bairro:"
+                placeholder="Bairro" />
+            </Box>
+            <Box>
+              <InputTexto
+                width="180"
+                label="UF:"
+                placeholder="UF" />
             </Box>
           </Box>
 

@@ -16,5 +16,5 @@ export function BotaoSair() {
             </G>
         </Svg>
     </TouchableOpacity>
-   ) 
+   )
 }
