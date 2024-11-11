@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
+    "@react-native-community/datetimepicker": "^8.2.0",
     "@types/yup": "^0.29.14",
+    "date-fns": "^4.1.0",
     "expo": "~51.0.38",
     "expo-constants": "~16.0.2",
     "expo-linking": "~6.3.1",

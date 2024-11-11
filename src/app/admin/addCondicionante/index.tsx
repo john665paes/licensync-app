@@ -1,26 +1,37 @@
-import {
+import { 
     VStack, Image, Text, Box, FormControl,
-    Input, Button, Link,
-    Center,
-    ScrollView
+    ScrollView, Row
 } from "native-base";
-import React from "react";
-import { Titulo } from "../../../componentes/titulo";
+import React, { useState } from "react";
 import { InputTexto } from "../../../componentes/formulario";
 import { Botoes } from "../../../componentes/botoes";
-import { View } from "react-native";
+import { Button, View } from "react-native";
 import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
-
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { TEMAS } from "../../../estilos/temas";
-import Logo from '../../../assets/imgs/login.png'
+import Logo from '../../../assets/imgs/login.png';
 import { router } from "expo-router";
-
-
+import { format } from 'date-fns'
 
 export default function CadastroCliente() {
-    return (
+    const [date, setDate] = useState(new Date(1598051730000));
+    const [show, setShow] = useState(false);
+    
+    const onChange = (event, selectedDate) => {
+        const currentDate = selectedDate || date;
+        setShow(false); 
+        setDate(currentDate);
+        console.log(selectedDate);
+    };
+    
+    const showDatePicker = () => {
+        setShow(true);
+    };
 
+    const datePlaceholder = format(date, 'dd/MM/yyyy');
+
+    return (
         <>
             <Box
                 alignItems={"center"}
@@ -28,15 +39,18 @@ export default function CadastroCliente() {
                 width="100%"
                 flexDir={"row"}
                 paddingTop={10}
-                backgroundColor={TEMAS.colors.verde}>
+                backgroundColor={TEMAS.colors.verde}
+            >
                 {/* VOLTAR */}
                 <View>
                     <BotaoVoltar />
                 </View>
 
                 {/* TEXTO */}
-                <View style={{ flex: 5, }}>
-                    <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>Cliente</Text>
+                <View style={{ flex: 5 }}>
+                    <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>
+                        Adicionar Condicionante
+                    </Text>
                 </View>
 
                 {/* SAIR */}
@@ -44,24 +58,38 @@ export default function CadastroCliente() {
                     <BotaoSair />
                 </View>
             </Box>
-            <ScrollView >
+            <ScrollView>
                 <VStack flex={1} padding={5}>
-
                     <InputTexto
+                        textAlignVertical="auto"
                         textAlign="left"
-                        placeholder="Adicione a condicionate...."
-                        height='230'
-                        label="Condicionante">01.222.333/0001-00</InputTexto>
-                    <InputTexto
-                        textAlign="left"
-                        label="Data até o vencimento:">byd@byd.com</InputTexto>
+                        placeholder="Adicione a condicionante...."
+                        height="200"
+                        label="Condicionante"
+                    />
 
+                    {/* Date Picker */}
+                    <View style={{ width: "50%", marginBottom: 5 }}>
+                        <Text color={TEMAS.colors.cinza} fontSize='md' marginTop={"1.5"} marginBottom={'0.5'}>Data até o vencimento:</Text>
+                        <Botoes  onPress={showDatePicker}>
+                            {date ? datePlaceholder : "Selecionar data"}
+                        </Botoes>
+                    </View>
+                    {show && (
+                        <DateTimePicker
+                            testID="datetimepicker"
+                            value={date}
+                            mode="date"
+                            is24Hour={true}
+                            onChange={onChange}
+                        />
+                    )}
 
-
-                    <Botoes width={'100%'}>ADD Condicionante</Botoes>
+                    <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
+                        <Botoes width={'50%'} marginRight={2}>Salvar</Botoes>
+                        <Botoes width={'50%'} bgColor={TEMAS.colors.red}>Cancelar</Botoes>
+                    </Box>
                     <Botoes width={'100%'}>ADD Licença</Botoes>
-                    <Botoes width={'100%'}>Editar Cliente</Botoes>
-
                 </VStack>
             </ScrollView>
         </>

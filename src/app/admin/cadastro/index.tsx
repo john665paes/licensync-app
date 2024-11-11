@@ -72,7 +72,9 @@ export default function Cadastro() {
                 label="   "
                 placeholder="telefone" />
             </Box>
-          </Box><InputTexto label="Endereço:"
+          </Box>
+          
+          <InputTexto label="Endereço:"
             placeholder="Endereço" />
 
           <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
