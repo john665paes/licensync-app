@@ -14,9 +14,10 @@ import Logo from '../../../assets/imgs/login.png';
 import { router } from "expo-router";
 import { format } from 'date-fns'
 
-export default function CadastroCliente() {
+export default function AddCondicioante () {
     const [date, setDate] = useState(new Date(1598051730000));
     const [show, setShow] = useState(false);
+    const [conteudoAdd, setConteudoAdd] = useState('');
     
     const onChange = (event, selectedDate) => {
         const currentDate = selectedDate || date;
@@ -28,7 +29,9 @@ export default function CadastroCliente() {
     const showDatePicker = () => {
         setShow(true);
     };
-
+const setTexto = () =>{
+    onchange
+}
     const datePlaceholder = format(date, 'dd/MM/yyyy');
 
     return (
@@ -66,6 +69,9 @@ export default function CadastroCliente() {
                         placeholder="Adicione a condicionante...."
                         height="200"
                         label="Condicionante"
+                        value={conteudoAdd}
+                        onChangeText={setConteudoAdd}
+                        
                     />
 
                     {/* Date Picker */}
@@ -86,7 +92,7 @@ export default function CadastroCliente() {
                     )}
 
                     <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
-                        <Botoes width={'50%'} marginRight={2}>Salvar</Botoes>
+                        <Botoes width={'50%'} marginRight={2} onPress={() => router.push('/admin/cadastroCliente')}>Salvar</Botoes>
                         <Botoes width={'50%'} bgColor={TEMAS.colors.red}>Cancelar</Botoes>
                     </Box>
                     <Botoes width={'100%'}>ADD Licença</Botoes>

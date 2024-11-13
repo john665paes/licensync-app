@@ -2,11 +2,13 @@ import { router } from "expo-router";
 import React from "react";
 import { Touchable, TouchableOpacity } from "react-native"
 import Svg, { Path, G} from 'react-native-svg';
+import { auth } from "../../config/firebase";
 
 export function BotaoSair() {
 
    return (
     <TouchableOpacity onPress={() => {
+        auth.signOut()
         router.replace('/')
     }}>
         <Svg height="32" id="svg8" viewBox="0 0 12.7 12.7" width="48" color={"white"}>

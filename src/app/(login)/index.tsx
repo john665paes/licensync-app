@@ -1,5 +1,5 @@
 import { VStack, Image, Box, Link, Text } from "native-base";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from '../../assets/imgs/login.png'
 import React from "react";
 import { Titulo } from "../../componentes/titulo";
@@ -8,7 +8,12 @@ import { InputTexto } from "../../componentes/formulario";
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { router } from "expo-router";
-import {TEMAS} from '../../estilos/temas'
+import { TEMAS } from '../../estilos/temas'
+import { auth, db } from "../../config/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { doc, getDoc } from "firebase/firestore";
+import { LogBox } from "react-native";
 
 export default function Login() {
 
@@ -16,15 +21,28 @@ export default function Login() {
 
 
   const handleLogin = async ({ email, senha }: any) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    if (email.trim() == 'teste@teste.com' && senha.trim() == '123') {
-      setResultadoLogin('logado');
-      console.log('logado')
-      router.replace('/admin');
-    } else {
-      setResultadoLogin('falhou');
-    }
+    setResultadoLogin(null);
+
+    signInWithEmailAndPassword(auth, email, senha)
+      .then(async (userCredential) => {
+        //SUCESSO    
+        const snapshot = await getDoc(doc(db, "usuarios", userCredential.user.uid));
+        const dados = snapshot.data();
+        if (dados?.nivel == 'admin')
+          router.replace('/admin');
+        else
+          router.replace('/cliente');
+      })
+      .catch((error) => {
+        //FALHOU
+        setResultadoLogin('falhou');
+        console.log('falhou')
+      });
   };
+
+  useEffect(() => {
+    LogBox.ignoreLogs(['In React 18, SSRProvider is not necessary and is a noop. You can remove it from your app.']);
+  }, []);
 
 
   return (
@@ -80,9 +98,6 @@ export default function Login() {
                 Entrar
               </Botoes>
 
-              {resultadoLogin == 'logado' && (
-                <Text >Logado com sucesso</Text>
-              )}
               {resultadoLogin == 'falhou' && (
                 <Text textAlign={'center'} color={TEMAS.colors.red}>Email ou senha incorreto</Text>
               )}

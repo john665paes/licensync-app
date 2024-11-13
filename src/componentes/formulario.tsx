@@ -12,6 +12,7 @@ interface InputformProps extends TextInputProps {
     mt?: string;
     bgcolor?: string;
     width?: string;
+    isReadOnly: boolean
 }
 
 export function InputTexto({
@@ -40,9 +41,9 @@ export function InputTexto({
                 shadow={5}
                 onBlur={onBlur}
                 onChangeText={onChangeText}
-                secureTextEntry={secureTextEntry}
+      secureTextEntry={secureTextEntry}
                 {...props}
-            />
+                />
         </FormControl>
     )
 };
