@@ -13,6 +13,7 @@ import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
 
 import { TEMAS } from "../../../estilos/temas";
+// @ts-ignore
 import Logo from '../../../assets/imgs/login.png'
 import { router, useLocalSearchParams } from "expo-router";
 import { auth, db, storage } from "../../../config/firebase";
@@ -24,13 +25,13 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export default function CadastroCliente() {
 
-  const { id }: {id: string} = useLocalSearchParams();
-  const [ usuario, setUsuario ] = useState<any>({});
+  const { id }: { id: string } = useLocalSearchParams();
+  const [usuario, setUsuario] = useState<any>({});
   // ================================================
   const handleBuscarUsuario = async () => {
-      const snapshot = await getDoc(doc(db, "usuarios", id));
-      const dados = snapshot.data();
-      setUsuario(dados);
+    const snapshot = await getDoc(doc(db, "usuarios", id));
+    const dados = snapshot.data();
+    setUsuario(dados);
   }
   // ----------
   const inserirLicenca = async () => {
@@ -39,22 +40,22 @@ export default function CadastroCliente() {
       type: "application/pdf",
       copyToCacheDirectory: true,
     });
-  
-      if (!result.canceled && auth.currentUser) {
-        const file = result;
 
-        const refLicenca = ref(storage, `arquivos/${auth.currentUser?.uid}/licenca.pdf`);
-        const blobStream = await fetch(file.assets[0].uri).then((r) => r.blob());
+    if (!result.canceled && auth.currentUser) {
+      const file = result;
 
-        await uploadBytes(refLicenca, blobStream);
-        const url = await getDownloadURL(refLicenca);
+      const refLicenca = ref(storage, `arquivos/${auth.currentUser?.uid}/licenca.pdf`);
+      const blobStream = await fetch(file.assets[0].uri).then((r) => r.blob());
 
-        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
-          licenca: url
-        });
+      await uploadBytes(refLicenca, blobStream);
+      const url = await getDownloadURL(refLicenca);
 
-        setUsuario({ ...usuario, licenca: url });
-      }
+      await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
+        licenca: url
+      });
+
+      setUsuario({ ...usuario, licenca: url });
+    }
   }
 
   // ---------
@@ -80,8 +81,8 @@ export default function CadastroCliente() {
 
         {/* TEXTO */}
         <View style={{ flex: 5, }}>
-          <Text color={TEMAS.colors.branco} fontSize={"2xl"} 
-          textAlign={"center"}>Cliente</Text>
+          <Text color={TEMAS.colors.branco} fontSize={"2xl"}
+            textAlign={"center"}>Cliente</Text>
         </View>
 
         {/* SAIR */}
@@ -128,7 +129,7 @@ export default function CadastroCliente() {
           >ADD Condicionante</Botoes>
           {usuario?.linceca && <Text>Licença já inserida</Text>}
           <Botoes width={'100%'} onPress={inserirLicenca}>ADD Licença</Botoes>
-          <Botoes width={'100%'}>Editar Cliente</Botoes>
+          <Botoes width={'100%'} onPress={() => console.log("Editar Cliente")}>Editar Cliente</Botoes>
 
         </VStack>
       </ScrollView>

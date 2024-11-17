@@ -13,6 +13,7 @@ import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
 
 import { TEMAS } from "../../../estilos/temas";
+// @ts-ignore
 import Logo from '../../../assets/imgs/login.png'
 import { router } from "expo-router";
 import { collection, getDocs } from "firebase/firestore";

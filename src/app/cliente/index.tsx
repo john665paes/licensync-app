@@ -15,6 +15,7 @@ import {
   import { BotaoSair } from "../../componentes/botoes/exit";
   
   import { TEMAS } from "../../estilos/temas";
+  // @ts-ignore
   import Logo from '../../assets/imgs/login.png'
   import { router } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";

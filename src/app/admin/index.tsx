@@ -16,6 +16,7 @@ import { SvgUri } from "react-native-svg";
 import { BotaoVoltar } from "../../componentes/botoes/back";
 import { BotaoSair } from "../../componentes/botoes/exit";
 import { Botoes } from "../../componentes/botoes";
+// @ts-ignore
 import Logo from '../../assets/imgs/login.png'
 import { TEMAS } from "../../estilos/temas";
 

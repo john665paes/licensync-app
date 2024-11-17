@@ -14,6 +14,7 @@ import { BotaoSair } from "../../../componentes/botoes/exit";
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { TEMAS } from "../../../estilos/temas";
+// @ts-ignore
 import Logo from '../../../assets/imgs/login.png'
 import { isValid } from "date-fns";
 import { router } from "expo-router";

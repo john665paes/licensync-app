@@ -10,6 +10,7 @@ import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { TEMAS } from "../../../estilos/temas";
+// @ts-ignore
 import Logo from '../../../assets/imgs/login.png';
 import { router } from "expo-router";
 import { format } from 'date-fns'
@@ -93,9 +94,9 @@ const setTexto = () =>{
 
                     <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
                         <Botoes width={'50%'} marginRight={2} onPress={() => router.push('/admin/cadastroCliente')}>Salvar</Botoes>
-                        <Botoes width={'50%'} bgColor={TEMAS.colors.red}>Cancelar</Botoes>
+                        <Botoes width={'50%'} onPress={() =>console.log("Cancelar")}bgColor={TEMAS.colors.red}>Cancelar</Botoes>
                     </Box>
-                    <Botoes width={'100%'}>ADD Licença</Botoes>
+                    <Botoes width={'100%'} onPress={() =>console.log("ADD Licença")}>ADD Licença</Botoes>
                 </VStack>
             </ScrollView>
         </>

@@ -1,5 +1,6 @@
 import { VStack, Image, Box, Link, Text } from "native-base";
 import { useEffect, useState } from "react";
+// @ts-ignore
 import Logo from '../../assets/imgs/login.png'
 import React from "react";
 import { Titulo } from "../../componentes/titulo";

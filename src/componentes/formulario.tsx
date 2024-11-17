@@ -5,14 +5,15 @@ import { TEMAS } from '../estilos/temas';
 
 interface InputformProps extends TextInputProps {
     label: string;
-    placeholder: string;
+    placeholder?: string;
     onBlur?: (e: any) => void;
     secureTextEntry?: boolean;
     onChangeText?: (text: string) => void;
     mt?: string;
     bgcolor?: string;
     width?: string;
-    isReadOnly: boolean
+    isReadOnly?: boolean
+    height?: string;
 }
 
 export function InputTexto({
@@ -22,6 +23,7 @@ export function InputTexto({
     onChangeText,
     secureTextEntry,
     width,
+    height,
     ...props
 }: InputformProps): JSX.Element {
 
@@ -37,6 +39,7 @@ export function InputTexto({
                 borderColor={TEMAS.colors.verde}
                 borderWidth={3}
                 width={width}
+                height={height}
                 bgColor={TEMAS.colors.branco}
                 shadow={5}
                 onBlur={onBlur}
