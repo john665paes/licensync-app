@@ -62,7 +62,7 @@ import { auth, db } from "../../config/firebase";
           </View>
         </Box>
         <ScrollView >
-          <VStack flex={5} padding={5} marg>
+          <VStack flex={2} padding={2} >
             <InputTexto
               textAlign="left"
               label="Empresa"
@@ -71,7 +71,7 @@ import { auth, db } from "../../config/firebase";
               textAlign="left"
               label="CNPJ"
               isReadOnly={true}
-            >{usuario?.cnpj}</InputTexto>
+              >{usuario?.cnpj}</InputTexto>
             <InputTexto
               textAlign="left"
               isReadOnly={true}

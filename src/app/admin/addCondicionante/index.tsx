@@ -30,7 +30,7 @@ export default function AddCondicioante () {
         setShow(true);
     };
 const setTexto = () =>{
-    onchange
+    
 }
     const datePlaceholder = format(date, 'dd/MM/yyyy');
 

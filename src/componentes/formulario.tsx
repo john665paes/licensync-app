@@ -41,9 +41,9 @@ export function InputTexto({
                 shadow={5}
                 onBlur={onBlur}
                 onChangeText={onChangeText}
-      secureTextEntry={secureTextEntry}
+                secureTextEntry={secureTextEntry}
                 {...props}
-                />
+            />
         </FormControl>
     )
 };
