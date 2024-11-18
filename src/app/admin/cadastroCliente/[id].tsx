@@ -13,59 +13,102 @@ import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
 
 import { TEMAS } from "../../../estilos/temas";
-// @ts-ignore
-import Logo from '../../../assets/imgs/login.png'
 import { router, useLocalSearchParams } from "expo-router";
 import { auth, db, storage } from "../../../config/firebase";
 import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import * as DocumentPicker from 'expo-document-picker';
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
-
-
 export default function CadastroCliente() {
-
   const { id }: { id: string } = useLocalSearchParams();
   const [usuario, setUsuario] = useState<any>({});
-  // ================================================
+  const [condicionantes, setCondicionantes] = useState<any[]>([]);
+
+  // Função para buscar dados do usuário
   const handleBuscarUsuario = async () => {
-    const snapshot = await getDoc(doc(db, "usuarios", id));
-    const dados = snapshot.data();
-    setUsuario(dados);
-  }
-  // ----------
+    try {
+      const snapshot = await getDoc(doc(db, "usuarios", id));
+      const dados = snapshot.data();
+      setUsuario(dados);
+    } catch (error) {
+      console.error("Erro ao buscar dados do usuário:", error);
+    }
+  };
+
+  // Função para buscar condicionantes
+  const handleBuscarCondicionantes = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "usuarios", id, "condicionantes"));
+
+      // Verifica se existem documentos na coleção
+      if (!snapshot.empty) {
+        const condicionantesData = snapshot.docs.map(doc => doc.data());
+        setCondicionantes(condicionantesData);
+      } else {
+        console.log("Nenhum condicionante encontrado.");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar condicionantes:", error);
+    }
+  };
+
+  // Função para inserir a licença
   const inserirLicenca = async () => {
-
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "application/pdf",
-      copyToCacheDirectory: true,
-    });
-
-    if (!result.canceled && auth.currentUser) {
-      const file = result;
-
-      const refLicenca = ref(storage, `arquivos/${auth.currentUser?.uid}/licenca.pdf`);
-      const blobStream = await fetch(file.assets[0].uri).then((r) => r.blob());
-
-      await uploadBytes(refLicenca, blobStream);
-      const url = await getDownloadURL(refLicenca);
-
-      await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
-        licenca: url
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+        copyToCacheDirectory: true,
       });
 
-      setUsuario({ ...usuario, licenca: url });
-    }
-  }
+      if (!result.canceled && id) {
+        const file = result.assets[0];
+        const fileName = file.name || "licença.pdf";
+        const refLicenca = ref(storage, `arquivos/${id}/${fileName}`);
 
-  // ---------
+        const blobStream = await fetch(file.uri).then((r) => r.blob());
+        await uploadBytes(refLicenca, blobStream);
+
+        const url = await getDownloadURL(refLicenca);
+        await updateDoc(doc(db, "usuarios", id), { licenca: url });
+
+        setUsuario(prevState => ({ ...prevState, licenca: url }));
+      } else {
+        console.log("Operação cancelada ou ID do usuário não encontrado.");
+      }
+    } catch (error) {
+      console.error("Erro durante o processo de upload da licença:", error);
+    }
+  };
+
+  // Função para extrair o nome do arquivo a partir da URL
+  const extractFileName = (url: string) => {
+    if (!url) {
+      console.error("A URL da licença está indefinida ou vazia");
+      return "Licença não disponível";
+    }
+
+    const startIndex = url.indexOf(id);
+    if (startIndex === -1) {
+      console.error("ID não encontrado na URL");
+      return "Licença não disponível";
+    }
+
+    const filePath = url.substring(startIndex + id.length);
+    const fileNameWithParams = filePath.substring(filePath.lastIndexOf('/') + 1);
+    const fileName = fileNameWithParams.split('?')[0];
+
+    return decodeURIComponent(fileName);
+  };
+
+  // Exibe o nome do arquivo da licença
+  const fileName = usuario?.licenca ? extractFileName(usuario?.licenca) : "Licença não disponível";
+
   useEffect(() => {
     handleBuscarUsuario();
+    handleBuscarCondicionantes();
+  }, []);
 
-  }, [])
-  // ====================================================
   return (
-
     <>
       <Box
         alignItems={"center"}
@@ -81,8 +124,7 @@ export default function CadastroCliente() {
 
         {/* TEXTO */}
         <View style={{ flex: 5, }}>
-          <Text color={TEMAS.colors.branco} fontSize={"2xl"}
-            textAlign={"center"}>Cliente</Text>
+          <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>Cliente</Text>
         </View>
 
         {/* SAIR */}
@@ -90,48 +132,72 @@ export default function CadastroCliente() {
           <BotaoSair />
         </View>
       </Box>
-      <ScrollView >
-        <VStack flex={1} padding={5}>
-          <InputTexto
-            textAlign="left"
-            label="Empresa"
-            readOnly>{usuario.empresa}</InputTexto>
-          <InputTexto
-            textAlign="left"
-            label="CNPJ"
-            readOnly
-          >{usuario.cnpj}</InputTexto>
-          <InputTexto
-            textAlign="left"
-            readOnly
-            label="E-mail">{usuario.email}</InputTexto>
 
-          <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
+      <ScrollView>
+        <VStack flex={1} padding={5}>
+          <InputTexto textAlign="left" label="Empresa" readOnly>{usuario?.empresa}</InputTexto>
+          <InputTexto textAlign="left" label="CNPJ" readOnly>{usuario?.cnpj}</InputTexto>
+          <InputTexto textAlign="left" readOnly label="E-mail">{usuario?.email}</InputTexto>
+
+          <Box flexDirection={"row"} alignItems={"center"} justifyContent={"center"} marginBottom={3}>
             <Box marginRight={2}>
               <InputTexto
                 width="180"
                 readOnly
                 bgcolor={TEMAS.colors.cinza}
-                label="Telefones:"
-                value={usuario.telefone1} />
+                label="Telefone 1:"
+                value={usuario?.telefone1}
+              />
             </Box>
             <Box>
               <InputTexto
                 readOnly
                 width="180"
-                label="   "
-                value={usuario.telefone2} />
+                label="Telefone 2:"
+                value={usuario?.telefone2}
+              />
             </Box>
           </Box>
 
-          <Botoes width={'100%'}
-            onPress={() => router.push('/admin/addCondicionante')}
-          >ADD Condicionante</Botoes>
-          {usuario?.linceca && <Text>Licença já inserida</Text>}
+          <Botoes
+            width={'100%'}
+            onPress={() => router.push(`/admin/addCondicionante?id=${id}`)}  // Aqui, userId seria a variável com o valor do id
+          >
+            ADD Condicionante
+          </Botoes>
           <Botoes width={'100%'} onPress={inserirLicenca}>ADD Licença</Botoes>
+          {/* {usuario?.licenca && <Text>Licença já inserida</Text>} */}
           <Botoes width={'100%'} onPress={() => console.log("Editar Cliente")}>Editar Cliente</Botoes>
 
+          <Link href={usuario?.licenca} isExternal>
+            {fileName}
+          </Link>
+
+          {condicionantes.length > 0 ? (
+            condicionantes.map((item, index) => (
+              <Box key={index} marginBottom={3}>
+                {/* Exibe uma parte do condicionante (limite de 100 caracteres, por exemplo) */}
+                <Text>
+                  {item.condicionante.length > 100
+                    ? item.condicionante.substring(0, 100) + "..." // Exibe os primeiros 100 caracteres
+                    : item.condicionante}
+                </Text>
+                {item.data && (
+                  <Text>
+                    {new Intl.DateTimeFormat("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric"
+                    }).format(new Date(item.data.seconds * 1000))}
+                  </Text>
+                )}
+              </Box>
+            ))
+          ) : (
+            <Text>Nenhuma condicionante encontrada.</Text>
+          )}
         </VStack>
+
       </ScrollView>
     </>
   );

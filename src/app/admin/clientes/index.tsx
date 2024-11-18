@@ -24,11 +24,11 @@ import { auth, db } from "../../../config/firebase";
 export default function Clientes() {
   const [clientes, setClientes] = React.useState<any>({});
   const listarClientes = async () => {
-   
-      const snapshot = await getDocs(collection(db, "usuarios"));
-      const listaClientes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const clientes = listaClientes.filter((item: any) => item.nivel == 'cliente');
-      setClientes(clientes);
+
+    const snapshot = await getDocs(collection(db, "usuarios"));
+    const listaClientes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const clientes = listaClientes.filter((item: any) => item.nivel == 'cliente');
+    setClientes(clientes);
   }
   // ---------
   useEffect(() => {
@@ -79,28 +79,28 @@ export default function Clientes() {
 
 
           <FlatList
+            scrollEnabled={false}
             data={clientes}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <View>
-                  <Button mt={5}  width={"full"} 
+                <Button mt={5} width={"full"}
                   justifyContent={"center"} alignItems={"center"}
-                  height={"10"} bgColor={TEMAS.colors.verde} borderRadius='lg' 
+                  height={"12"} bgColor={TEMAS.colors.verde} borderRadius='lg'
                   onPress={() => router.push(`/admin/cadastroCliente/${item.id}`)}
-                  _text={{fontSize: "lg",
+                  _text={{
+                    fontSize: "lg",
                     fontWeight: "semibold"
                   }}
-                  ><Text fontSize="lg" fontWeight="semibold" color="white" textAlign="center"> {item.empresa}</Text></Button>
-                  {/* <Text>Email: {item.email}</Text> */}
-                  </View>
-              )}
-            />
+                ><Text fontSize="lg" fontWeight="semibold" color="white" textAlign="center"> {item.empresa}</Text></Button>
+                {/* <Text>Email: {item.email}</Text> */}
+              </View>
+            )}
+          />
 
-
-
-        <Botoes mt={10} onPress={() => router.push('/admin/cadastro')}>Cadastrar Cliente</Botoes>
-      </VStack>
-    </ScrollView >
+          <Botoes mt={10} onPress={() => router.push('/admin/cadastro')}>Cadastrar Cliente</Botoes>
+        </VStack>
+      </ScrollView >
     </>
   );
 }
