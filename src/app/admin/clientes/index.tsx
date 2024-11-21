@@ -27,9 +27,14 @@ export default function Clientes() {
 
     const snapshot = await getDocs(collection(db, "usuarios"));
     const listaClientes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const clientes = listaClientes.filter((item: any) => item.nivel == 'cliente');
+    const clientes = listaClientes.filter((item: any) => item.nivel == 'cliente')
+        .sort((a: any, b: any) => a.empresa.localeCompare(b.empresa));
+  ;
     setClientes(clientes);
   }
+
+
+
   // ---------
   useEffect(() => {
     listarClientes();
@@ -98,7 +103,7 @@ export default function Clientes() {
             )}
           />
 
-          <Botoes mt={10} onPress={() => router.push('/admin/cadastro')}>Cadastrar Cliente</Botoes>
+          <Botoes mt={10} bgColor={"green.800"} onPress={() => router.push('/admin/cadastro')}>Cadastrar Cliente</Botoes>
         </VStack>
       </ScrollView >
     </>

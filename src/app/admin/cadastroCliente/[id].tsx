@@ -2,20 +2,22 @@ import {
   VStack, Image, Text, Box, FormControl,
   Input, Button, Link,
   Center,
-  ScrollView
+  ScrollView,
+  Divider,
+  HStack
 } from "native-base";
 import React, { useEffect, useState } from "react";
 import { Titulo } from "../../../componentes/titulo";
 import { InputTexto } from "../../../componentes/formulario";
 import { Botoes } from "../../../componentes/botoes";
-import { View } from "react-native";
+import { InputAccessoryView, View } from "react-native";
 import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
 
 import { TEMAS } from "../../../estilos/temas";
 import { router, useLocalSearchParams } from "expo-router";
 import { auth, db, storage } from "../../../config/firebase";
-import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import * as DocumentPicker from 'expo-document-picker';
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
@@ -34,11 +36,12 @@ export default function CadastroCliente() {
       console.error("Erro ao buscar dados do usuário:", error);
     }
   };
-
   // Função para buscar condicionantes
   const handleBuscarCondicionantes = async () => {
     try {
       const snapshot = await getDocs(collection(db, "usuarios", id, "condicionantes"));
+      const docRef = doc(collection(db, "usuarios", id, "condicionantes", id));
+      await setDoc(docRef, { condicionantes, id: docRef.id });
 
       // Verifica se existem documentos na coleção
       if (!snapshot.empty) {
@@ -51,7 +54,6 @@ export default function CadastroCliente() {
       console.error("Erro ao buscar condicionantes:", error);
     }
   };
-
   // Função para inserir a licença
   const inserirLicenca = async () => {
     try {
@@ -162,35 +164,83 @@ export default function CadastroCliente() {
           <Botoes
             width={'100%'}
             onPress={() => router.push(`/admin/addCondicionante?id=${id}`)}  // Aqui, userId seria a variável com o valor do id
-          >
-            ADD Condicionante
-          </Botoes>
+          >ADD Condicionante</Botoes>
+
           <Botoes width={'100%'} onPress={inserirLicenca}>ADD Licença</Botoes>
           {/* {usuario?.licenca && <Text>Licença já inserida</Text>} */}
           <Botoes width={'100%'} onPress={() => console.log("Editar Cliente")}>Editar Cliente</Botoes>
 
-          <Link href={usuario?.licenca} isExternal>
-            {fileName}
-          </Link>
+          <Divider mt={5} />
+          <Titulo mt={0}>Licença prefeitura</Titulo>
+          <Divider mt={1} />
+
+          <View style={{ alignItems: "center" }}>
+          <Button mt={3}
+          borderRadius={"xl"}
+            width={'80%'}
+            height={"10"}
+            bg={"gray.700"}
+
+            href={usuario?.licenca} isExternal> {fileName}
+          </Button></View>
+          
+          <Divider mt={5} />
+          <Titulo mt={0}>Condicionantes</Titulo>
+          <Divider mt={1} />
 
           {condicionantes.length > 0 ? (
             condicionantes.map((item, index) => (
-              <Box key={index} marginBottom={3}>
+              <Box key={index} mt={2}>
                 {/* Exibe uma parte do condicionante (limite de 100 caracteres, por exemplo) */}
-                <Text>
+                <Button 
+                mt={2}
+                bgColor={"gray.500"}
+                color="black"
+                borderRadius={"xl"}>
+                  
                   {item.condicionante.length > 100
                     ? item.condicionante.substring(0, 100) + "..." // Exibe os primeiros 100 caracteres
-                    : item.condicionante}
-                </Text>
+                    : item.condicionante} </Button>
+
+                <HStack justifyContent="space-between">
                 {item.data && (
-                  <Text>
+                  
+                  <Button alignItems={"self-end"}
+                    mt={2}
+                    width={'30%'}
+                    height={"80%"}
+                  borderRadius={"xl"}>
                     {new Intl.DateTimeFormat("pt-BR", {
                       day: "2-digit",
                       month: "2-digit",
                       year: "numeric"
                     }).format(new Date(item.data.seconds * 1000))}
-                  </Text>
+                  </Button>
+                  
                 )}
+                  <Button
+                    alignItems={"self-end"}
+                    mt={2}
+                    width={'30%'}
+                    height={"80%"}
+                    borderRadius={"xl"}
+                    onPress={async () => {
+                      if (!item?.id) {
+                        console.error("ID do condicionante não encontrado.");
+                        return;
+                      }
+                      try {
+                        const condicionanteRef = doc(db, "usuarios", id, "condicionantes", item.id);
+                        await deleteDoc(condicionanteRef);
+                        setCondicionantes((prev) => prev.filter((c) => c.id !== item?.id));
+                      } catch (error) {
+                        console.error("Erro ao deletar condicionante:", error);
+                      }
+                    }}
+                  >Apagar</Button>
+                    </HStack>
+
+                <Divider mt={3} />
               </Box>
             ))
           ) : (

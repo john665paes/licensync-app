@@ -10,7 +10,7 @@ import {
     Link,
     Center
 } from "native-base";
-import React from "react";
+import React, { useEffect } from "react";
 import { View } from "react-native";
 import { SvgUri } from "react-native-svg";
 import { BotaoVoltar } from "../../componentes/botoes/back";
@@ -19,9 +19,25 @@ import { Botoes } from "../../componentes/botoes";
 // @ts-ignore
 import Logo from '../../assets/imgs/login.png'
 import { TEMAS } from "../../estilos/temas";
-
-
+import { collection, getDocs } from "firebase/firestore";
+import { auth, db } from "../../config/firebase";
 export default function IndexADM() {
+    const [nomeUsuario, setNomeUsuario] = React.useState('');
+    useEffect(() => {
+        const fetchName = async () => {
+            const querySnapshot = await getDocs(collection(db, "usuarios"));
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.email === auth.currentUser?.email) {
+                    setNomeUsuario(data.nome);
+                    console.log(nomeUsuario, "logado");
+                }
+            });
+        };
+        fetchName();
+    }, []);     
+
+
     return (
         <>
             <Box
@@ -38,7 +54,8 @@ export default function IndexADM() {
 
                 {/* TEXTO */}
                 <View style={{ flex: 1, }}>
-                    <Text color={TEMAS.colors.branco} textAlign={"center"}>ADMIN</Text>
+                    <Text color={TEMAS.colors.branco} textAlign={"left"} fontSize={20}>  Olá,  {nomeUsuario}</Text> 
+
                 </View>
 
                 {/* SAIR */}
@@ -66,3 +83,7 @@ export default function IndexADM() {
         </>
     );
 }
+function useAuth(): { user: any; } {
+    throw new Error("Function not implemented.");
+}
+

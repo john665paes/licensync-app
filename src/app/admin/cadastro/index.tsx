@@ -80,15 +80,16 @@ export default function Cadastro() {
         <Formik
           initialValues={{empresa: '', cnpj: '', email: '', telefone1: '',telefone2: '', cep: '', numero: '', complemento: '', endereco: '', cidade: '', bairro: '', uf: ''}}
           validationSchema={Yup.object().shape({
-            empresa: Yup.string().required('Campo Empresa obrigatório'),
-            cnpj: Yup.string().required('Campo CNPJ obrigatório'),
-            email: Yup.string().required('Campo Email obrigatório').email('Email inválido'),
-            telefone1: Yup.string().required('Campo Telefone obrigatório'),
-            cep: Yup.string().required('Campo CEP obrigatório'),
-            numero: Yup.string().required('Campo Número obrigatório'),
-            cidade: Yup.string().required('Campo Cidade obrigatório'),
-            bairro: Yup.string().required('Campo Bairro obrigatório'),
-            uf: Yup.string().required('Campo UF obrigatório')
+            empresa: Yup.string().required('Campo "Empresa" obrigatório'),
+            cnpj: Yup.string().required('Campo "CNPJ" obrigatório'),
+            email: Yup.string().required('Campo "Email" obrigatório').email('Email inválido'),
+            telefone1: Yup.string().required('Campo "Telefone" obrigatório'),
+            cep: Yup.string().required('Campo "CEP" obrigatório'),
+            numero: Yup.string().required('Campo "Número" obrigatório'),
+            cidade: Yup.string().required('Campo "Cidade" obrigatório'),
+            endereco: Yup.string().required('Campo "Endereço" obrigatório'),
+            bairro: Yup.string().required('Campo "Bairro" obrigatório'),
+            uf: Yup.string().required('Campo "UF" obrigatório')
           })}
           onSubmit={salvarCliente}
         >

@@ -6,6 +6,7 @@ import { TEMAS } from "../estilos/temas"
 interface BotoesProps extends IButtonProps{
     onPress(): void
     children: ReactNode
+    readOnly?: boolean
 }
 export function Botoes({children, onPress, ...rest}: BotoesProps){
     return(
