@@ -1,23 +1,22 @@
 import {
-  VStack, Image, Text, Box, FormControl,
-  Input, Button, Link,
-  Center,
-  ScrollView,
+  VStack, Text, Box,
+  Button,
   Divider,
-  HStack
+  HStack,
+  ScrollView,
 } from "native-base";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Titulo } from "../../../componentes/titulo";
 import { InputTexto } from "../../../componentes/formulario";
 import { Botoes } from "../../../componentes/botoes";
-import { InputAccessoryView, View } from "react-native";
+import { RefreshControl, View } from "react-native";
 import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
-
+import { Linking } from "react-native";
 import { TEMAS } from "../../../estilos/temas";
 import { router, useLocalSearchParams } from "expo-router";
-import { auth, db, storage } from "../../../config/firebase";
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import { db, storage } from "../../../config/firebase";
+import { collection, deleteDoc, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import * as DocumentPicker from 'expo-document-picker';
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
@@ -25,6 +24,17 @@ export default function CadastroCliente() {
   const { id }: { id: string } = useLocalSearchParams();
   const [usuario, setUsuario] = useState<any>({});
   const [condicionantes, setCondicionantes] = useState<any[]>([]);
+
+
+  //Arrumar o reload
+  const [refreshing, setRefreshing] = useState(false);
+  // function do reload
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000); // Simula uma atualização com 2 segundos de delay
+  };
 
   // Função para buscar dados do usuário
   const handleBuscarUsuario = async () => {
@@ -36,16 +46,19 @@ export default function CadastroCliente() {
       console.error("Erro ao buscar dados do usuário:", error);
     }
   };
+
   // Função para buscar condicionantes
   const handleBuscarCondicionantes = async () => {
     try {
+      // Obtém a coleção de condicionantes
       const snapshot = await getDocs(collection(db, "usuarios", id, "condicionantes"));
-      const docRef = doc(collection(db, "usuarios", id, "condicionantes", id));
-      await setDoc(docRef, { condicionantes, id: docRef.id });
 
-      // Verifica se existem documentos na coleção
+      // Atualiza o estado com os dados da coleção
       if (!snapshot.empty) {
-        const condicionantesData = snapshot.docs.map(doc => doc.data());
+        const condicionantesData = snapshot.docs.map(doc => ({
+          id: doc.id, // Inclui o ID do documento no objeto
+          ...doc.data()
+        }));
         setCondicionantes(condicionantesData);
       } else {
         console.log("Nenhum condicionante encontrado.");
@@ -54,6 +67,7 @@ export default function CadastroCliente() {
       console.error("Erro ao buscar condicionantes:", error);
     }
   };
+
   // Função para inserir a licença
   const inserirLicenca = async () => {
     try {
@@ -135,7 +149,10 @@ export default function CadastroCliente() {
         </View>
       </Box>
 
-      <ScrollView>
+      <ScrollView refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
+
         <VStack flex={1} padding={5}>
           <InputTexto textAlign="left" label="Empresa" readOnly>{usuario?.empresa}</InputTexto>
           <InputTexto textAlign="left" label="CNPJ" readOnly>{usuario?.cnpj}</InputTexto>
@@ -168,22 +185,25 @@ export default function CadastroCliente() {
 
           <Botoes width={'100%'} onPress={inserirLicenca}>ADD Licença</Botoes>
           {/* {usuario?.licenca && <Text>Licença já inserida</Text>} */}
-          <Botoes width={'100%'} onPress={() => console.log("Editar Cliente")}>Editar Cliente</Botoes>
+          <Botoes width={'100%'} onPress={() => router.push(`/admin/editar?id=${id}`)}>Editar Cliente</Botoes>
 
           <Divider mt={5} />
           <Titulo mt={0}>Licença prefeitura</Titulo>
           <Divider mt={1} />
 
           <View style={{ alignItems: "center" }}>
-          <Button mt={3}
-          borderRadius={"xl"}
-            width={'80%'}
-            height={"10"}
-            bg={"gray.700"}
+            <Button
+              mt={3}
+              borderRadius="xl"
+              width="80%"
+              height="10"
+              bg="gray.700"
+              onPress={() => Linking.openURL(usuario?.licenca)}
+            >
+              {fileName}
+            </Button>
+          </View>
 
-            href={usuario?.licenca} isExternal> {fileName}
-          </Button></View>
-          
           <Divider mt={5} />
           <Titulo mt={0}>Condicionantes</Titulo>
           <Divider mt={1} />
@@ -192,32 +212,32 @@ export default function CadastroCliente() {
             condicionantes.map((item, index) => (
               <Box key={index} mt={2}>
                 {/* Exibe uma parte do condicionante (limite de 100 caracteres, por exemplo) */}
-                <Button 
-                mt={2}
-                bgColor={"gray.500"}
-                color="black"
-                borderRadius={"xl"}>
-                  
-                  {item.condicionante.length > 100
-                    ? item.condicionante.substring(0, 100) + "..." // Exibe os primeiros 100 caracteres
-                    : item.condicionante} </Button>
+                <Button
+                  mt={2}
+                  bgColor={"gray.500"}
+                  color="black"
+                  borderRadius={"xl"}>
+
+                  {item.condicionante && item.condicionante.length > 100
+                    ? item.condicionante.substring(0, 100) + "..."
+                    : item.condicionante || "Condicionante não disponível"}</Button>
 
                 <HStack justifyContent="space-between">
-                {item.data && (
-                  
-                  <Button alignItems={"self-end"}
-                    mt={2}
-                    width={'30%'}
-                    height={"80%"}
-                  borderRadius={"xl"}>
-                    {new Intl.DateTimeFormat("pt-BR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric"
-                    }).format(new Date(item.data.seconds * 1000))}
-                  </Button>
-                  
-                )}
+                  {item.data && (
+
+                    <Button alignItems={"self-end"}
+                      mt={2}
+                      width={'30%'}
+                      height={"80%"}
+                      borderRadius={"xl"}>
+                      {new Intl.DateTimeFormat("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }).format(new Date(item.data.seconds * 1000))}
+                    </Button>
+
+                  )}
                   <Button
                     alignItems={"self-end"}
                     mt={2}
@@ -238,7 +258,7 @@ export default function CadastroCliente() {
                       }
                     }}
                   >Apagar</Button>
-                    </HStack>
+                </HStack>
 
                 <Divider mt={3} />
               </Box>

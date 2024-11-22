@@ -16,11 +16,10 @@ import * as Yup from 'yup';
 import { TEMAS } from "../../../estilos/temas";
 // @ts-ignore
 import Logo from '../../../assets/imgs/login.png'
-import { isValid } from "date-fns";
 import { router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../../../config/firebase";
-import { addDoc, doc, setDoc } from "firebase/firestore";
+import {  doc, setDoc } from "firebase/firestore";
 import Toast from 'react-native-toast-message';
 
 export default function Cadastro() {

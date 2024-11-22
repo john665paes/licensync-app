@@ -67,7 +67,7 @@ export default function AddCondicioante() {
             });
 
             console.log("Condicionante adicionado com sucesso!");
-            router.push(`/admin/cadastroCliente/${id}`);
+            router.back();
         } catch (error) {
             console.error("Erro ao salvar condicionante:", error.message, error.stack);
         }
@@ -135,7 +135,7 @@ export default function AddCondicioante() {
                     {/* Botões para salvar ou cancelar */}
                     <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
                         <Botoes width={'50%'} marginRight={2} onPress={salvarCondicionante}>Salvar</Botoes>
-                        <Botoes width={'50%'} onPress={() => console.log("Cancelar")} bgColor={TEMAS.colors.red}>Cancelar</Botoes>
+                        <Botoes width={'50%'} onPress={() => router.back()} bgColor={TEMAS.colors.red}>Cancelar</Botoes>
                     </Box>
                     <Botoes width={'100%'} onPress={() => console.log("ADD Licença")}>ADD Licença</Botoes>
                 </VStack>
