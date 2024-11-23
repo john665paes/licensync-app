@@ -1,117 +1,166 @@
 import {
-  VStack, Image, Text, Box, FormControl,
+  VStack, Image, Box, FormControl,
   Input, Button, Link,
   Center,
   ScrollView,
   Divider,
-  Flex
+  Flex,
+  HStack
 } from "native-base";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Titulo } from "../../componentes/titulo";
 import { InputTexto } from "../../componentes/formulario";
-import { Botoes } from "../../componentes/botoes";
-import { View } from "react-native";
 import { BotaoVoltar } from "../../componentes/botoes/back";
 import { BotaoSair } from "../../componentes/botoes/exit";
-
 import { TEMAS } from "../../estilos/temas";
-// @ts-ignore
-import Logo from '../../assets/imgs/login.png'
-import { router } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
+import { router, useLocalSearchParams } from "expo-router";
+import { collection, deleteDoc, doc, getDoc, getDocs } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
+import { View, Text, Linking } from "react-native";
+import moment from "moment";
+import { background } from "native-base/lib/typescript/theme/styled-system";
 
 export default function IndexCliente() {
+  const id = auth.currentUser?.uid;
+  const [usuario, setUsuario] = useState<any>({});
+  const [condicionantes, setCondicionantes] = useState<any[]>([]);
 
-  const [usuario, setUsuario] = React.useState<any>({});
-  // ============================================
+  // mudar a cor da data conforme vencimento
+  const getButtonColor = (data) => {
+    
+    const dataHoje = moment()
+    const dataPrazo = moment(data, 'YYYY-MM-DD')
+    const diasRestantes = dataPrazo.diff(dataHoje, 'days')
+    
+    //Já passou o prazo 
+    if (moment(data).isBefore(moment()))
+      return "red";
+    else if (diasRestantes <= 30) //É menos de 30 dias
+      return "orange";
+    else // Tem mais de 30 dias
+      return "green"; 
+  };
+  
+
+  // Buscar dados do usuário
   const buscarDados = async () => {
     if (auth.currentUser) {
       const snapshot = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
-      const dados = snapshot.data();
-      setUsuario(dados);
+      const usuario =snapshot.data();
+      setUsuario(usuario);
+
+      // Exibe o nome do arquivo da licença
+      console.log(usuario?.licenca)
     }
-  }
-  // ---------
+  };
+
+  // Buscar condicionantes
+  const handleBuscarCondicionantes = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "usuarios", id, "condicionantes"));
+      if (!snapshot.empty) {
+        const condicionantesData = snapshot.docs.map((doc) => ({
+          id: doc.id, // Certifique-se de incluir o ID aqui
+          ...doc.data(),
+        }));
+        setCondicionantes(condicionantesData);
+      } else {
+        console.log("Nenhum condicionante encontrado.");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar condicionantes:", error);
+    }
+  };
+
+
+  // Função para extrair o nome do arquivo a partir da URL
+
+  
+
   useEffect(() => {
     buscarDados();
-  }, [])
-  // ============================================
-  return (
+    handleBuscarCondicionantes();
+  }, []);
 
+  return (
     <>
-      <Box
-        //   alignItems={"center"}
-        height="20"
-        width="100%"
-        flexDir={"row"}
-        paddingTop={10}
-        backgroundColor={TEMAS.colors.verde}>
-        {/* VOLTAR */}
+      <Box height="20" width="100%" flexDir={"row"} paddingTop={10} backgroundColor={TEMAS.colors.verde}>
         <View>
           {/* <BotaoVoltar /> */}
         </View>
-
-        {/* TEXTO */}
-        <View style={{ flex: 5, }}>
-          <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>LicenSync</Text>
+        <View style={{ flex: 5 }}>
+          <Text style={{color:TEMAS.colors.branco, fontSize: 20, textAlign: "center" }}>LicenSync</Text>
         </View>
-
-        {/* SAIR */}
         <View>
           <BotaoSair />
         </View>
       </Box>
-      <ScrollView >
-        <VStack flex={2} padding={2} >
-          <InputTexto
-            textAlign="left"
-            label="Empresa"
-            isReadOnly={true}>{usuario?.empresa}</InputTexto>
-          <InputTexto
-            textAlign="left"
-            label="CNPJ"
-            isReadOnly={true}
-          >{usuario?.cnpj}</InputTexto>
-          <InputTexto
-            textAlign="left"
-            isReadOnly={true}
-            label="E-mail">{usuario?.email}</InputTexto>
+
+      <ScrollView>
+        <VStack flex={2} padding={2}>
+          <InputTexto textAlign="left" label="Empresa" isReadOnly>{usuario?.empresa}</InputTexto>
+          <InputTexto textAlign="left" label="CNPJ" isReadOnly>{usuario?.cnpj}</InputTexto>
+          <InputTexto textAlign="left" label="E-mail" isReadOnly>{usuario?.email}</InputTexto>
 
           <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
             <Box marginRight={2}>
-              <InputTexto
-                width="180"
-                isReadOnly={true}
-                bgcolor={TEMAS.colors.cinza}
-                label="Telefones:">{usuario?.telefone1}</InputTexto>
+              <InputTexto width="180" isReadOnly bgcolor={TEMAS.colors.cinza} label="Telefones:">{usuario?.telefone1}</InputTexto>
             </Box>
             <Box>
-              <InputTexto
-                isReadOnly={true}
-                width="180"
-                label=" "> {usuario?.telefone2} </InputTexto>
+              <InputTexto isReadOnly width="180" label=" ">{usuario?.telefone2}</InputTexto>
             </Box>
           </Box>
+          {/** =================================================== */}
+          <Divider mt={5} />
+          <Titulo mt={0}>Licença</Titulo>
+          <Divider mt={2} />
+          {usuario?.licenca && (
+            <View style={{ alignItems: "center" }}>
+              <Button
+                mt={3}
+                borderRadius="xl"
+                width="80%"
+                height="10"
+                bg="gray.700"
+                onPress={() => Linking.openURL(usuario?.licenca)}
+                >
+                Baixar licença
+              </Button>
+            </View>
+            )}
 
+          {/** =================================================== */}
           <Divider mt={5} />
           <Titulo mt={0}>Condicionantes</Titulo>
           <Divider mt={1} />
-          <Flex>
-            <InputTexto label={""}></InputTexto>
-            <Botoes onPress={() => console.log("selecionar data")}
-              alignSelf={"start"}>
-              {"Selecionar data"}
-            </Botoes>
-          </Flex>
 
+          {condicionantes.length > 0 ? (
+            condicionantes
+              .sort((a, b) => moment(a.data).toDate() - moment(b.data).toDate())
+              .map((item) => (
+                <Box key={item.id} mt={2}>
+                  <Button mt={2} bgColor={TEMAS.colors.verde} color="black" borderRadius={"xl"} 
+                  onPress={() => router.push(`/cliente/checkCondicionante/${item.id}`)}
+                  >
+                    {item.condicionante && item.condicionante.length > 100
+                      ? item.condicionante.substring(0, 100) + "..."
+                      : item.condicionante || "Condicionante não disponível"}
+                  </Button>
 
-          {/* <Botoes width={'100%'}
-              onPress={() => router.push('/admin/addCondicionante')}
-            >ADD Condicionante</Botoes>
-            <Botoes width={'100%'}>ADD Licença</Botoes>
-            <Botoes width={'100%'}>Editar Cliente</Botoes> */}
+                  
+                    {item.data && (
+                      <Text style={{color: getButtonColor(item.data), textAlign: 'right', fontWeight: 'bold', fontSize: 18 }}>
+                        Prazo: {moment(item.data).format("DD/MM/YYYY")} 
+                      </Text>
+                    )}
+                  
 
+                  <Divider mt={3} />
+                </Box>
+              ))
+          ) : (
+            <Text>Nenhuma condicionante encontrada.</Text>
+          )}
         </VStack>
       </ScrollView>
     </>

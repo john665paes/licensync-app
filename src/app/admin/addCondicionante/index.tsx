@@ -14,27 +14,17 @@ import { db } from "../../../config/firebase";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
+import moment from 'moment';
 
 export default function AddCondicioante() {
-    const [date, setDate] = useState<Date>(new Date());
+    const [date, setDate] = useState<string>(moment().format('YYYY-MM-DD'));
     const [show, setShow] = useState(false);
     const [conteudoAdd, setConteudoAdd] = useState('');
     const { id }: { id: string } = useLocalSearchParams(); // Obtendo o ID do usuário
 
-    useEffect(() => {
-        const localDate = new Date();
-        const brasiliaOffset = -3 * 60;
-        const localOffset = localDate.getTimezoneOffset();
-
-        // Ajusta para Brasília
-        const adjustedDate = new Date(localDate.getTime() + (localOffset + brasiliaOffset) * 60000);
-
-        setDate(adjustedDate);
-    }, []);
-
     // Função chamada quando a data é selecionada
     const onChange = (event, selectedDate) => {
-        const currentDate = selectedDate || date;
+        let currentDate = moment(selectedDate).format('YYYY-MM-DD');
         setShow(false);
         setDate(currentDate);
     };
@@ -42,8 +32,6 @@ export default function AddCondicioante() {
     const showDatePicker = () => {
         setShow(true);
     };
-
-    const datePlaceholder = format(date, 'dd/MM/yyyy');
 
     // Função para salvar o condicionante no Firestore
     const salvarCondicionante = async () => {
@@ -63,7 +51,7 @@ export default function AddCondicioante() {
             const condicionanteRef = collection(db, "usuarios", id, "condicionantes");
             await addDoc(condicionanteRef, {
                 condicionante: conteudoAdd,
-                data: Timestamp.fromDate(date)  // Salvando a data corretamente
+                data: date  // Salvando a data corretamente
             });
 
             console.log("Condicionante adicionado com sucesso!");
@@ -118,15 +106,16 @@ export default function AddCondicioante() {
                     <View style={{ width: "50%", marginBottom: 5 }}>
                         <Text color={TEMAS.colors.cinza} fontSize='md' marginTop={"1.5"} marginBottom={'0.5'}>Data até o vencimento:</Text>
                         <Botoes onPress={showDatePicker}>
-                            {date ? datePlaceholder : "Selecionar data"}
+                            {date ? moment(date).format('DD/MM/YYYY') : "Selecionar data"}
                         </Botoes>
                     </View>
 
                     {show && (
                         <DateTimePicker
                             testID="datetimepicker"
-                            value={date}
+                            value={moment(date).toDate()}
                             mode="date"
+                            minimumDate={new Date()}
                             is24Hour={true}
                             onChange={onChange}
                         />

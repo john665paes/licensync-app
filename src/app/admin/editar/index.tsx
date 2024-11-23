@@ -122,7 +122,7 @@ export default function Editar() {
 
         {/* TEXTO */}
         <View style={{ flex: 5, }}>
-          <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>Cadastro de Clientes</Text>
+          <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>Editar Clientes</Text>
         </View>
 
         {/* SAIR */}
@@ -173,6 +173,7 @@ export default function Editar() {
                 onBlur={handleBlur('email')}
                 onChangeText={handleChange('email')}
                 placeholder="E-mail"
+                readOnly
                 value={values.email} />
               {touched.email && errors.email && <Text color={TEMAS.colors.red}>{errors.email}</Text>}
 

@@ -19,7 +19,7 @@ import { db, storage } from "../../../config/firebase";
 import { collection, deleteDoc, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import * as DocumentPicker from 'expo-document-picker';
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-
+import moment from 'moment';
 export default function CadastroCliente() {
   const { id }: { id: string } = useLocalSearchParams();
   const [usuario, setUsuario] = useState<any>({});
@@ -29,11 +29,10 @@ export default function CadastroCliente() {
   //Arrumar o reload
   const [refreshing, setRefreshing] = useState(false);
   // function do reload
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000); // Simula uma atualização com 2 segundos de delay
+    await handleBuscarCondicionantes();
+    setRefreshing(false);
   };
 
   // Função para buscar dados do usuário
@@ -209,7 +208,9 @@ export default function CadastroCliente() {
           <Divider mt={1} />
 
           {condicionantes.length > 0 ? (
-            condicionantes.map((item, index) => (
+            condicionantes
+            .sort((a, b) => moment(a.data).toDate() - moment(b.data).toDate())
+            .map((item, index) => (
               <Box key={index} mt={2}>
                 {/* Exibe uma parte do condicionante (limite de 100 caracteres, por exemplo) */}
                 <Button
@@ -230,11 +231,7 @@ export default function CadastroCliente() {
                       width={'30%'}
                       height={"80%"}
                       borderRadius={"xl"}>
-                      {new Intl.DateTimeFormat("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric"
-                      }).format(new Date(item.data.seconds * 1000))}
+                      {moment(item.data).format("DD/MM/YYYY")}
                     </Button>
 
                   )}
