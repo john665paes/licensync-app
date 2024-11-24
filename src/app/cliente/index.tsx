@@ -89,7 +89,7 @@ export default function IndexCliente() {
           {/* <BotaoVoltar /> */}
         </View>
         <View style={{ flex: 5 }}>
-          <Text style={{color:TEMAS.colors.branco, fontSize: 20, textAlign: "center" }}>LicenSync</Text>
+          <Text style={{color:TEMAS.colors.branco, fontSize: 20, textAlign: "center" }}>           LicenSync</Text>
         </View>
         <View>
           <BotaoSair />

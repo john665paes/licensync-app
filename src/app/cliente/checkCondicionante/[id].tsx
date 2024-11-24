@@ -1,9 +1,9 @@
-import { Text, Box, Center, ScrollView, HStack, Button } from "native-base";
+import { Text, Box, Center, ScrollView, HStack, Button, Divider } from "native-base";
 import React, { useState, useEffect } from "react";
 import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
 import { TEMAS } from "../../../estilos/temas";
-import {  Linking, TouchableOpacity, View } from "react-native";
+import { Linking, TouchableOpacity, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db, storage } from "../../../config/firebase";
@@ -174,15 +174,31 @@ export default function CheckCondicionante() {
               Carregando condicionante...
             </Text>
           )}
-          <TouchableOpacity onPress={inserirComprovante}><Text>Editar</Text></TouchableOpacity>
+
+          <Divider mt={5} mb={3} borderColor={TEMAS.colors.verde} />
+          <TouchableOpacity style={{
+
+            backgroundColor: "green",
+            padding: 5,
+            borderRadius: 8,
+            alignItems: 'center'
+          }}
+            
+            onPress={inserirComprovante} >
+            <Text style ={{ color:"white", fontSize: 16, fontWeight: 'bold' }} 
+
+              
+              
+              >Inserir Comprovante</Text></TouchableOpacity>
 
           {condicionante?.comprovante && (
-            <Button
-              mt={3}
+            <Button alignSelf={'center'} shadow={20} _text={{ color: "black" }}
+            style={{ alignItems: 'center' }}
+              mt={8}
               borderRadius="xl"
               width="80%"
               height="10"
-              bg="gray.700"
+              bg="gray.300"
               onPress={() => Linking.openURL(condicionante?.comprovante)}
             >
               {fileName}
