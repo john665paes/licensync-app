@@ -217,7 +217,8 @@ export default function CadastroCliente() {
                   mt={2}
                   bgColor={"gray.500"}
                   color="black"
-                  borderRadius={"xl"}>
+                  borderRadius={"xl"}
+                  >
 
                   {item.condicionante && item.condicionante.length > 100
                     ? item.condicionante.substring(0, 100) + "..."

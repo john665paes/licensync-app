@@ -51,7 +51,7 @@ export default function Login() {
       <Image size={100} width={190} marginTop={40} source={Logo} alt="background Login" />
 
       <Formik
-        initialValues={{ email: 'cliente@teste.com', senha: '123456' }}
+        initialValues={{ email: 'maria@maria.com', senha: '123456' }}
         validationSchema={Yup.object().shape({
           email: Yup.string().required('Informe o E-mail').email('E-mail não válido'),
 
@@ -75,7 +75,7 @@ export default function Login() {
                 width="300"
                 label="E-mail"
                 placeholder="Digite seu e-mail"
-                value="cliente@teste.com"
+                value="maria@maria.com"
                 onBlur={handleBlur('email')}
                 onChangeText={handleChange('email')}
               />

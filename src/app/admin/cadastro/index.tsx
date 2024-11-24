@@ -77,7 +77,8 @@ export default function Cadastro() {
       <Toast />
       <ScrollView>
         <Formik
-          initialValues={{empresa: '', cnpj: '', email: '', telefone1: '',telefone2: '', cep: '', numero: '', complemento: '', endereco: '', cidade: '', bairro: '', uf: ''}}
+          initialValues={{empresa: '', cnpj: '', email: '', telefone1: '',telefone2: '', cep: '',
+             numero: '', complemento: '', endereco: '', cidade: '', bairro: '', uf: ''}}
           validationSchema={Yup.object().shape({
             empresa: Yup.string().required('Campo "Empresa" obrigatório'),
             cnpj: Yup.string().required('Campo "CNPJ" obrigatório'),
@@ -97,8 +98,8 @@ export default function Cadastro() {
 
                 {<Image size={100} alignSelf={'center'} width={150} marginTop="18" source={Logo} alt="background Login" />}
       
-                {/* <Titulo marginTop={"15"} color={TEMAS.colors.verde}>Cadatro de Cliente</Titulo> */}
-                <InputTexto label="Empresa:"
+                <Titulo marginTop={"15"} color={TEMAS.colors.verde}>Cadatro de Cliente</Titulo> 
+                 <InputTexto label="Empresa:"
                   onBlur={handleBlur('empresa')}
                   onChangeText={handleChange('empresa')}
                   placeholder="Nome" />
