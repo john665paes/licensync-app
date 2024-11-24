@@ -57,7 +57,7 @@ export default function IndexCliente() {
   // Buscar condicionantes
   const handleBuscarCondicionantes = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "usuarios", id, "condicionantes"));
+      const snapshot = await getDocs(collection(db, "usuarios", id!, "condicionantes"));
       if (!snapshot.empty) {
         const condicionantesData = snapshot.docs.map((doc) => ({
           id: doc.id, // Certifique-se de incluir o ID aqui
@@ -136,7 +136,7 @@ export default function IndexCliente() {
 
           {condicionantes.length > 0 ? (
             condicionantes
-              .sort((a, b) => moment(a.data).toDate() - moment(b.data).toDate())
+              .sort((a, b) => moment(a.data).toDate().valueOf() - moment(b.data).toDate().valueOf())
               .map((item) => (
                 <Box key={item.id} mt={2}>
                   <Button mt={2} bgColor={TEMAS.colors.verde} color="black" borderRadius={"xl"} 

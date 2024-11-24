@@ -209,7 +209,7 @@ export default function CadastroCliente() {
 
           {condicionantes.length > 0 ? (
             condicionantes
-            .sort((a, b) => moment(a.data).toDate() - moment(b.data).toDate())
+            .sort((a, b) => moment(a.data).toDate().valueOf() - moment(b.data).toDate().valueOf())
             .map((item, index) => (
               <Box key={index} mt={2}>
                 {/* Exibe uma parte do condicionante (limite de 100 caracteres, por exemplo) */}
