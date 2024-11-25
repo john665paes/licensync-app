@@ -124,9 +124,9 @@ export default function AddCondicioante() {
                     {/* Botões para salvar ou cancelar */}
                     <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
                         <Botoes width={'50%'} marginRight={2} onPress={salvarCondicionante}>Salvar</Botoes>
-                        <Botoes width={'50%'} onPress={() => router.back()} bgColor={TEMAS.colors.red}>Cancelar</Botoes>
+                        <Botoes width={'50%'} onPress={() => router.back()} bgColor={"tomato"}>Cancelar</Botoes>
                     </Box>
-                    <Botoes width={'100%'} onPress={() => console.log("ADD Licença")}>ADD Licença</Botoes>
+                    {/* <Botoes width={'100%'} onPress={() => console.log("ADD Licença")}>ADD Licença</Botoes> */}
                 </VStack>
             </ScrollView>
         </>

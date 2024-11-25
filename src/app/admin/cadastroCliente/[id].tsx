@@ -123,6 +123,22 @@ export default function CadastroCliente() {
     handleBuscarCondicionantes();
   }, []);
 
+  const getButtonColor = (data) => {
+    
+    const dataHoje = moment()
+    const dataPrazo = moment(data, 'YYYY-MM-DD')
+    const diasRestantes = dataPrazo.diff(dataHoje, 'days')
+    
+    
+    //Já passou o prazo 
+    if (moment(data).isBefore(moment()))
+      return "red";
+    else if (diasRestantes <= 30) //É menos de 30 dias
+      return "orange";
+    else // Tem mais de 30 dias
+      return "green"; 
+  };
+
   return (
     <>
       <Box
@@ -220,20 +236,23 @@ export default function CadastroCliente() {
                   borderRadius={"xl"}
                   >
 
-                  {item.condicionante && item.condicionante.length > 100
-                    ? item.condicionante.substring(0, 100) + "..."
+                  {item.condicionante && item.condicionante.length > 80
+                    ? item.condicionante.substring(0, 80) + "..."
                     : item.condicionante || "Condicionante não disponível"}</Button>
 
                 <HStack justifyContent="space-between">
                   {item.data && (
 
-                    <Button alignItems={"self-end"}
+                    <Text alignItems={"self-end"}
                       mt={2}
-                      width={'30%'}
-                      height={"80%"}
-                      borderRadius={"xl"}>
+                      fontSize={"md"}
+                      bold
+                      style={{
+                        color: getButtonColor(item.data),
+                      }}
+                      >
                       {moment(item.data).format("DD/MM/YYYY")}
-                    </Button>
+                    </Text>
 
                   )}
                   <Button
@@ -241,6 +260,7 @@ export default function CadastroCliente() {
                     mt={2}
                     width={'30%'}
                     height={"80%"}
+                    bg={"tomato"}
                     borderRadius={"xl"}
                     onPress={async () => {
                       if (!item?.id) {
