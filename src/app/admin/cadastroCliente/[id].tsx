@@ -196,9 +196,9 @@ export default function CadastroCliente() {
           <Botoes
             width={'100%'}
             onPress={() => router.push(`/admin/addCondicionante?id=${id}`)}  // Aqui, userId seria a variável com o valor do id
-          >ADD Condicionante</Botoes>
+          >Nova Condicionante</Botoes>
 
-          <Botoes width={'100%'} onPress={inserirLicenca}>ADD Licença</Botoes>
+          <Botoes width={'100%'} onPress={inserirLicenca}>Inserir Licença</Botoes>
           {/* {usuario?.licenca && <Text>Licença já inserida</Text>} */}
           <Botoes width={'100%'} onPress={() => router.push(`/admin/editar?id=${id}`)}>Editar Cliente</Botoes>
 
