@@ -14,7 +14,7 @@ import { auth, db } from "../../config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { doc, getDoc } from "firebase/firestore";
-import { LogBox } from "react-native";
+import { ActivityIndicator, LogBox } from "react-native";
 
 export default function Login() {
 
@@ -24,7 +24,7 @@ export default function Login() {
   const handleLogin = async ({ email, senha }: any) => {
     setResultadoLogin(null);
 
-    signInWithEmailAndPassword(auth, email, senha)
+    await signInWithEmailAndPassword(auth, email, senha)
       .then(async (userCredential) => {
         //SUCESSO    
         const snapshot = await getDoc(doc(db, "usuarios", userCredential.user.uid));
@@ -93,11 +93,12 @@ export default function Login() {
               {errors.senha && touched.senha && (
                 <Text >{errors.senha}</Text>
               )}
-              <Botoes
-                onPress={handleSubmit}
-                disabled={isSubmitting}>
+              { isSubmitting?
+                (<ActivityIndicator color={TEMAS.colors.verde} size={30}/>)
+                :
+                (<Botoes onPress={handleSubmit} >
                 Entrar
-              </Botoes>
+              </Botoes>)}
 
               {resultadoLogin == 'falhou' && (
                 <Text textAlign={'center'} color={TEMAS.colors.red}>Email ou senha incorreto</Text>
