@@ -1,5 +1,6 @@
 {
   "expo": {
+    "newArchEnabled": true,
     "name": "licensync",
     "slug": "licensync",
     "version": "1.0.0",

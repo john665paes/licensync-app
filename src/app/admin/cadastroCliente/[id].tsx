@@ -203,6 +203,12 @@ export default function CadastroCliente() {
           <Botoes width={'100%'} onPress={() => router.push(`/admin/editar?id=${id}`)}>Editar Cliente</Botoes>
 
           <Divider mt={5} />
+          <Titulo mt={0}>Condiconantes Concluidas</Titulo>
+          <Divider mt={1} />
+
+          <Botoes width={'100%'} onPress={() => router.push(`/admin/condicionantesConcluidos?id=${id}`)}>Ver Condicionantes</Botoes>
+
+          <Divider mt={5} />
           <Titulo mt={0}>Licença prefeitura</Titulo>
           <Divider mt={1} />
 
