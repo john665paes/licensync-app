@@ -1,121 +1,176 @@
-// import { VStack, Image, Box, Link, Text } from "native-base";
-// import { useEffect, useState } from "react";
-// // @ts-ignore
-// import Logo from '../../assets/imgs/login.svg'
-import React from "react";
-import Logo from '../../assets/imgs/login.svg'
-import { ImageBackground, View, StyleSheet, Text } from "react-native";
-// import { Titulo } from "../../componentes/titulo";
-// import { Botoes } from "../../componentes/botoes";
-// import { InputTexto } from "../../componentes/formulario";
-// import { Formik } from 'formik';
-// import * as Yup from 'yup';
-// import { router } from "expo-router";
-// import { TEMAS } from '../../estilos/temas'
-// import { auth, db } from "../../config/firebase";
-// import { signInWithEmailAndPassword } from "firebase/auth";
-// import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-// import { doc, getDoc } from "firebase/firestore";
-// import { ActivityIndicator, ImageBackground, LogBox, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, LogBox, ActivityIndicator } from "react-native";
+import Logo from "../../assets/imgs/login.svg";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../../config/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { router } from "expo-router";
+import { Formik } from "formik";
+import * as Yup from "yup";
+import { TEMAS } from "../../estilos/temas";
 
 export default function Login() {
 
-  // const [resultadoLogin, setResultadoLogin] = useState<null | 'logado' | 'falhou'>(null);
+  const [resultadoLogin, setResultadoLogin] = useState<null | 'logado' | 'falhou'>(null);
 
-  // const handleLogin = async ({ email, senha }: any) => {
-  //   setResultadoLogin(null);
 
-  //   await signInWithEmailAndPassword(auth, email, senha)
-  //     .then(async (userCredential) => {
-  //       //SUCESSO    
-  //       const snapshot = await getDoc(doc(db, "usuarios", userCredential.user.uid));
-  //       const dados = snapshot.data();
-  //       if (dados?.nivel == 'admin')
-  //         router.replace('/admin');
-  //       else
-  //         router.replace('/cliente');
-  //     })
-  //     .catch((error) => {
-  //       //FALHOU
-  //       setResultadoLogin('falhou');
-  //       console.log('falhou')
-  //     });
-  // };
+  const handleLogin = async ({ email, senha }: any) => {
+    setResultadoLogin(null);
 
-  // useEffect(() => {
-  //   LogBox.ignoreLogs(['In React 18, SSRProvider is not necessary and is a noop. You can remove it from your app.']);
-  // }, []);
+    await signInWithEmailAndPassword(auth, email, senha)
+      .then(async (userCredential) => {
+        //SUCESSO    
+        const snapshot = await getDoc(doc(db, "usuarios", userCredential.user.uid));
+        const dados = snapshot.data();
+        if (dados?.nivel == 'admin')
+          router.replace('/admin');
+        else
+          router.replace('/cliente');
+      })
+      .catch((error) => {
+        //FALHOU
+        setResultadoLogin('falhou');
+        console.log('falhou')
+      });
+  };
+
+  useEffect(() => {
+    LogBox.ignoreLogs(['In React 18, SSRProvider is not necessary and is a noop. You can remove it from your app.']);
+  }, []);
 
 
   return (
-    // <VStack flex={1} alignItems="center" justifyContent="center" padding={5}>
-    //   <Image size={100} width={190} marginTop={40} source={Logo} alt="background Login" />
+    <Formik
+      initialValues={{ email: '', senha: '' }}
+      validationSchema={Yup.object().shape({
+        email: Yup.string().required('Informe o E-mail').email('E-mail não válido'),
 
-    //   <Formik
-    //     initialValues={{ email: '', senha: '' }}
-    //     validationSchema={Yup.object().shape({
-    //       email: Yup.string().required('Informe o E-mail').email('E-mail não válido'),
+        senha: Yup.string().required('Informe sua senha').min(3, 'A senha precisa ter 3 caracteres')
+      })}
+      onSubmit={handleLogin}>
+      {({ errors,
+        touched,
+        handleBlur,
+        handleChange,
+        handleSubmit,
+        isSubmitting, }) => (
 
-    //       senha: Yup.string().required('Informe sua senha').min(3, 'A senha precisa ter 3 caracteres')
-    //     })}
-    //     onSubmit={handleLogin}>
+        <View style={styles.container} >
+          {/* PARTE SUPERIOR BRANCA */}
+          <View style={styles.topContainer}>
+            <Logo width={200} height={150} />
+            <Text style={styles.subtitle}>Gestão de Condicionantes Ambientais</Text>
+          </View>
 
-    //     {({ errors,
-    //       touched,
-    //       handleBlur,
-    //       handleChange,
-    //       handleSubmit,
-    //       isSubmitting, }) => (
-    //       <>
-    //         <Titulo>
-    //           Faça login em sua conta
-    //         </Titulo>
+          {/* PARTE INFERIOR CINZA */}
+          <View style={styles.bottomContainer}>
+            <Text style={styles.title}>Faça seu login</Text>
 
-    //         <Box >
-    //           <InputTexto
-    //             width="300"
-    //             label="E-mail"
-    //             placeholder="Digite seu e-mail"
-    //             onBlur={handleBlur('email')}
-    //             onChangeText={handleChange('email')}
-    //           />
-    //           {errors.email && touched.email && (
-    //             <Text >{errors.email}</Text>
-    //           )}
+            <TextInput style={styles.input}
+              placeholder="Digite seu email"
+              //label = "e-mail"
+              onBlur={handleBlur('email')}
+              onChangeText={handleChange('email')} />
 
-    //           <InputTexto
-    //             width="300"
-    //             label="Senha"
-    //             placeholder="Insira sua senha"
-    //             onBlur={handleBlur('senha')}
-    //             onChangeText={handleChange('senha')}
-    //             secureTextEntry
-    //           />
-    //           {errors.senha && touched.senha && (
-    //             <Text >{errors.senha}</Text>
-    //           )}
-    //           { isSubmitting?
-    //             (<ActivityIndicator color={TEMAS.colors.verde} size={30}/>)
-    //             :
-    //             (<Botoes onPress={handleSubmit} >
-    //             Entrar
-    //           </Botoes>)}
 
-    //           {resultadoLogin == 'falhou' && (
-    //             <Text textAlign={'center'} color={TEMAS.colors.red}>Email ou senha incorreto</Text>
-    //           )}
-    //         </Box>
+            <TextInput style={styles.input}
+              placeholder="Insira sua senha"
+              onBlur={handleBlur('senha')}
+              onChangeText={handleChange('senha')}
+              secureTextEntry />
 
-    //         <Link href="" mt={6}>Esqueceu sua senha?</Link>
-    //       </>
-    //     )}
-    //   </Formik>
-    // </VStack>
-      
-        <View alignItems={'center'} justifyContent={'center'} style={{flex:1}}>
-          <Logo width={200} height={200} />
-          <Text>Teste</Text>
-        </View> 
-        
+            {errors.senha && touched.senha && (
+              <Text >{errors.senha}</Text>
+            )}
+            {isSubmitting ?
+              (<ActivityIndicator color={TEMAS.colors.verde} size={30} />)
+              :
+              (
+                <TouchableOpacity onPress={handleSubmit} style={styles.button}>
+                  <Text style={styles.buttonText}>Entrar</Text>
+                </TouchableOpacity>)}
+
+            {resultadoLogin == 'falhou' && (
+              //preciso adicionar o vermelho para avisar o erro de senha ou email incorreto. 
+              <Text /*textAlign={'center'} color={TEMAS.colors.red}*/>Email ou senha incorreto</Text>
+            )}
+
+            <TouchableOpacity>
+              <Text style={styles.forgot} alignSelf="center">Esqueci minha senha</Text>
+            </TouchableOpacity>
+
+
+          </View>
+        </View>
+
+      )}
+    </Formik>
   );
-};
+
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff", // fundo  branco
+  },
+  topContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff", //container branca cima
+  },
+  logo: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#2d8b4e",
+  },
+  subtitle: {
+    fontSize: 18,
+    color: "#2d8b4e",
+    marginTop: 4,
+  },
+  bottomContainer: {
+    flex: 1,
+    backgroundColor: "#f2eeeecf", // container cinza claro baixo
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    borderTopColor: "#2d8b4e",
+    borderTopWidth: 3
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#2d8b4e",
+    marginBottom: 4,
+  },
+  text: {
+    color: "#777",
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  forgot: {
+    color: "#2d8b4e",
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: "#2d8b4e",
+    padding: 14,
+    borderRadius: 25,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+});

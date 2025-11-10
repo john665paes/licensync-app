@@ -1,14 +1,16 @@
-// import {extendTheme} from 'native-base'
+import {extendTheme} from 'native-base'
 
-// export const TEMAS = extendTheme({
-//     colors: {
-//         branco: '#ffffff',
-//         verde: '#267526',
-//         cinza: '#707070',
-//         red:'#ff0000'
-//     }
-// })
+export const TEMAS = extendTheme({
+    colors: {
+        branco: '#ffffff',
+        verde: '#267526',
+        cinza: '#707070',
+        red:'#ff0000'
+    }
+})
 
+
+// centralizar cores, tamanhos e fontes.
 export const theme = {
     colors: {
     primary: "#2d8b4e",

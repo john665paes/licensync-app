@@ -10,7 +10,10 @@ export function ScreenContainer({ topContent, bottomContent }) {
     </View>
   );
 }
-
+// *NÃO ESQUECER:
+//   -container tela Inteira,
+//   -topContainer parte da template, flex 1 com fundo ProgressBarAndroidComponent,
+//   -bottomContainer parte da template, flex 2 com fundo cinza.
 const styles = StyleSheet.create({
   container: {
     flex: 1,
