@@ -1,13 +1,19 @@
-import { NativeBaseProvider, StatusBar, theme } from 'native-base'
-import { TEMAS } from '../estilos/temas';
+import { StatusBar, SafeAreaView,   StyleSheet } from 'react-native';
+import { theme} from '../estilos/themes';
 import { Stack } from 'expo-router';
-import React from 'react';
 
 export default function Layout() {
     return (
-        <NativeBaseProvider theme={theme}>
-            <StatusBar backgroundColor={TEMAS.colors.verde} />
+        <SafeAreaView style={Style.safeArea}>
+            <StatusBar backgroundColor={theme.colors.primary} />
             <Stack screenOptions={{ headerShown: false }} />
-        </NativeBaseProvider>
+        </SafeAreaView>
     );
 }
+
+const Style = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+});

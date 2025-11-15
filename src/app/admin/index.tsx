@@ -1,27 +1,28 @@
+import React from "react";
 import { router } from "expo-router";
-import {
-    VStack,
-    Image,
-    Text,
-    Box,
-    FormControl,
-    Input,
-    Button,
-    Link,
-    Center
-} from "native-base";
-import React, { useEffect } from "react";
-import { View } from "react-native";
-import { SvgUri } from "react-native-svg";
-import { BotaoVoltar } from "../../componentes/botoes/back";
-import { BotaoSair } from "../../componentes/botoes/exit";
-import { Botoes } from "../../componentes/botoes";
 // @ts-ignore
-import Logo from '../../assets/imgs/login.png'
-import { TEMAS } from "../../estilos/temas";
 import { collection, getDocs } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
+import { TouchableOpacity, View, Text, StyleSheet, SafeAreaView, StatusBar, Image, ScrollView, Button } from "react-native";
+import { useEffect } from "react";
+import { ScreenContainer } from "../../componentes/ScreenContainer";
+import HomeHeader from "../../componentes/HomeHeader";
+import {theme} from "../../estilos/themes";
+
+
+
+function ConteudoDeBaixo() {
+    return (
+        <View>
+            <Text style={styles.subtitulo}>Área de Ações</Text>
+            <Text>Este conteúdo fica no painel cinza.</Text>
+            <Button title="Clique-me" onPress={() => alert("Clicou!")} />
+        </View>
+    );
+}
 export default function IndexADM() {
+
+
     const [nomeUsuario, setNomeUsuario] = React.useState('');
     useEffect(() => {
         const fetchName = async () => {
@@ -35,55 +36,50 @@ export default function IndexADM() {
             });
         };
         fetchName();
-    }, []);     
+    }, []);
 
 
     return (
         <>
-            <Box
-                height="20"
-                width="100%"
-                flexDir={"row"}
-                paddingTop={10}
+        <SafeAreaView style={{ flex: 1 }}>
+            <HomeHeader></HomeHeader>
+            {/* 2. Use o ScreenContainer e passe os componentes via props */}
+            <ScreenContainer style={{ flex: 3 }}
+                topContent={<ConteudoDeCima />}
+                bottomContent ={<ConteudoDeBaixo />}
+            />
+        </SafeAreaView>
+            {/* <View>
 
-                backgroundColor={TEMAS.colors.verde}>
-                {/* VOLTAR */}
-                <View>
-                    {/* <BotaoVoltar /> */}
-                </View>
+                <TouchableOpacity onPress={() => {console.log('clicou em clientes');
+                    router.push('/admin/clientes')}} >
+                    <Text>Clientes</Text>
 
-                {/* TEXTO */}
-                <View style={{ flex: 1, }}>
-                    <Text color={TEMAS.colors.branco} textAlign={"left"} fontSize={20}>  Olá,  {nomeUsuario}</Text> 
-
-                </View>
-
-                {/* SAIR */}
-                <View>
-                    <BotaoSair />
-                </View>
-            </Box>
-            <Box >
-                <VStack flex={1} alignItems="center" padding={5} >
-                    {<Image size={100} width={150} marginTop="18" source={Logo} alt="background Login" />}
+                </TouchableOpacity>
 
 
-                    <Botoes onPress={() => router.push('/admin/clientes')} width="100%" >
-                        Clientes
-                    </Botoes>
+                <TouchableOpacity onPress={() =>  {console.log('clicou cadastro')
+                    router.push('/admin/cadastro')}}>
+                    <Text> Cadastrar Clientes</Text>
+                </TouchableOpacity>
 
-
-                    <Botoes width="100%" onPress={() => router.push('/admin/cadastro')}>
-                        Cadastrar Clientes
-                    </Botoes>
-                </VStack>
-            </Box>
-
-
+            </View > */}
         </>
     );
 }
 function useAuth(): { user: any; } {
     throw new Error("Function not implemented.");
 }
+const styles = StyleSheet.create({
+  titulo: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  subtitulo: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 12,
+  },
+});
 
