@@ -129,6 +129,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#2d8b4e",
     marginTop: 4,
+    fontWeight: 'bold'//letra em negritoo 
   },
   bottomContainer: {
     flex: 1,
