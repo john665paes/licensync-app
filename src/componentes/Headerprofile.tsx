@@ -4,7 +4,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import { theme } from '../estilos/themes';
 
 
-export default function UserProfileHeader({ userName }) {
+export default function UserProfileHeader({ userName, userImage, onImagePress }) {
 
 
   const getSaudacao = () => {
@@ -21,11 +21,23 @@ export default function UserProfileHeader({ userName }) {
       <View style={styles.contentContainer}>
         {/* manter do laddo Esquerdo: Imagem e Texto */}
         <View style={styles.leftContent}>
-        
-          <Image
-            source={{ uri: "https://i.pravatar.cc/100" }} // Imagem placeholder
-            style={styles.profileImage}
-          />
+
+          <TouchableOpacity onPress={onImagePress} activeOpacity={0.7}>
+            {userImage ? (
+              <Image
+                source={{ uri: userImage }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.profilePlaceholder}>
+                <Feather name="user" size={28} color={theme.colors.primary} />
+              </View>
+            )}
+
+            <View style={styles.editIconContainer}>
+              <Feather name="camera" size={10} color="#FFF" />
+            </View>
+          </TouchableOpacity>
 
           <View>
             <Text style={styles.greetingText}>{saudacao}</Text>
@@ -50,13 +62,10 @@ export default function UserProfileHeader({ userName }) {
   );
 }
 
-// Definição dos estilos usando StyleSheet
 const styles = StyleSheet.create({
-  // Equivalente a 'bg-emerald-600 p-4 text-white shadow-md rounded-b-lg'
   header: {
-    backgroundColor: theme.colors.primary, // Cor 'emerald-600' aproximada
-    padding: 16, // p-4 (16px)
-    // O shadow no React Native é diferente; esta é a sombra Android (elevation) e iOS (shadow...)
+    backgroundColor: theme.colors.primary, 
+    padding: 16, 
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -64,40 +73,33 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
 
-  // Equivalente a 'flex items-center justify-between max-w-6xl mx-auto'
   contentContainer: {
-    flexDirection: 'row', // flex
-    alignItems: 'center', // items-center
-    justifyContent: 'space-between', // justify-between
-    // max-w-6xl e mx-auto não são diretamente necessários no RN, 
-    // pois o layout é nativamente de largura total, mas centralizamos o conteúdo
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between', 
   },
 
-  // Equivalente a 'flex items-center space-x-4'
   leftContent: {
-    flexDirection: 'row', // flex
-    alignItems: 'center', // items-center
-    gap: 16, // space-x-4 (gap para React Native 0.71+)
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 16, 
   },
 
-  // Equivalente a 'w-14 h-14 rounded-full border-2 border-white shadow-sm'
   profileImage: {
-    width: 56, // w-14 (56px)
-    height: 56, // h-14 (56px)
-    borderRadius: 28, // rounded-full (metade da largura/altura)
-    borderWidth: 2, // border-2
-    borderColor: '#FFFFFF', // border-white
+    width: 56, 
+    height: 56, 
+    borderRadius: 28,
+    borderWidth: 2, 
+    borderColor: '#FFFFFF', 
   },
 
-  // Equivalente a 'text-sm text-emerald-100'
   greetingText: {
-    fontSize: 14, // text-sm
-    color: '#D1FAE5', // Cor 'emerald-100' aproximada
+    fontSize: 14, 
+    color: '#D1FAE5', 
   },
 
-  // Equivalente a 'text-xl font-semibold'
   userName: {
-    fontSize: 20, // text-xl
+    fontSize: 20, 
     fontWeight: '600', // font-semibold
     color: '#FFFFFF', // text-white (Herdado, mas garantido)
   },
@@ -106,10 +108,9 @@ const styles = StyleSheet.create({
   notificationButton: {
     padding: 8, // p-2 (8px)
     borderRadius: 16, // rounded-full (para um botão de 24+8+8 = 40px)
-    // No RN, não há 'hover' ou 'focus' automáticos; a TouchableOpacity lida com o feedback.
+    // No RN, não há 'hover' ou 'focus.
   },
 
-  // Equivalente a 'absolute top-2 right-2 block w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-emerald-600'
   notificationDot: {
     position: 'absolute', // absolute
     top: 2, // top-2 (8px, ajustado para posicionamento)
@@ -120,5 +121,37 @@ const styles = StyleSheet.create({
     borderRadius: 5, // rounded-full (metade)
     borderWidth: 2, // border-2
     borderColor: '#059669', // border-emerald-600
+  },
+  profileImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28, // Redondo
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+
+  
+  profilePlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28, // Redondo
+    backgroundColor: '#9CA3AF', // Um cinza médio (estilo placeholder padrão)
+    justifyContent: 'center', // Centraliza o boneco
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  
+  // Aquele ícone pequeno de câmera no cantinho (opcional, mas ajuda o usuário a saber que pode clicar)
+  editIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: theme.colors.primary, // Ou uma cor escura
+    borderRadius: 10,
+    padding: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFF',
+    elevation: 2
   },
 });
