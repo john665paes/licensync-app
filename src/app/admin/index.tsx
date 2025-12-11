@@ -60,13 +60,12 @@ export default function IndexADM() {
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     
-                    // 1. Acha o usuário logado para o Header
                     if (data.email === auth.currentUser?.email) {
                         usuarioLogadoNome = data.nome;
                         usuarioLogadoFoto = data.fotoPerfil;
                     }
 
-                    // 2. Monta a lista com ID para filtrar depois
+                   
                     listaTodosUsuarios.push({ id: doc.id, ...data });
                 });
 
@@ -165,7 +164,7 @@ export default function IndexADM() {
                 <Text style={styles.sectionTitle}>Meus Clientes</Text>
                 <TouchableOpacity 
                     style={styles.addButton}
-                    onPress={() => router.push('/admin/cadastro')}
+                    onPress={() => router.push('../../admin/CreateClient')}
                 >
                     <Feather name="user-plus" size={18} color="#FFF" />
                     <Text style={styles.addButtonText}>Cadastrar</Text>
