@@ -1,279 +1,390 @@
 import React, { useEffect, useState } from "react";
-import {
-  VStack, Image, Text, Box, ScrollView,
-} from "native-base";
-import { View } from "react-native";
+import { 
+    View, 
+    Text, 
+    ScrollView, 
+    StyleSheet, 
+    Image, 
+    ActivityIndicator, 
+    Platform, 
+    StatusBar,
+    SafeAreaView
+} from "react-native";
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import { router, useLocalSearchParams } from "expo-router";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import Toast from 'react-native-toast-message';
+
+// Configurações e Componentes
+import { db } from "../../../config/firebase";
+import { TEMAS } from "../../../estilos/temas";
 import { InputTexto } from "../../../componentes/formulario";
 import { Botoes } from "../../../componentes/botoes";
 import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
-import { Formik } from 'formik';
-import * as Yup from 'yup';
-import { TEMAS } from "../../../estilos/temas";
+
 // @ts-ignore
-import Logo from '../../../assets/imgs/login.png'
-import { router, useLocalSearchParams } from "expo-router";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../../config/firebase";
-import Toast from 'react-native-toast-message';
+import Logo from '../../../assets/imgs/login.png';
 
 // Tipo explícito para os dados do cliente
 type ClienteData = {
-  empresa: string;
-  cnpj: string;
-  email: string;
-  telefone1: string;
-  telefone2: string;
-  cep: string;
-  numero: string;
-  complemento: string;
-  endereco: string;
-  cidade: string;
-  bairro: string;
-  uf: string;
+    empresa: string;
+    cnpj: string;
+    email: string;
+    telefone1: string;
+    telefone2: string;
+    cep: string;
+    numero: string;
+    complemento: string;
+    endereco: string;
+    cidade: string;
+    bairro: string;
+    uf: string;
 };
 
 export default function Editar() {
-  const [initialValues, setInitialValues] = useState<ClienteData>({
-    empresa: '',
-    cnpj: '',
-    email: '',
-    telefone1: '',
-    telefone2: '',
-    cep: '',
-    numero: '',
-    complemento: '',
-    endereco: '',
-    cidade: '',
-    bairro: '',
-    uf: '',
-  });
-  const [loading, setLoading] = useState(true);
-  const { id }: { id: string } = useLocalSearchParams(); // Obtendo o ID do usuário
+    const { id } = useLocalSearchParams();
+    const clientId = id as string;
 
-  const clientId = id;
+    const [loading, setLoading] = useState(true);
+    const [initialValues, setInitialValues] = useState<ClienteData>({
+        empresa: '', cnpj: '', email: '', telefone1: '', telefone2: '',
+        cep: '', numero: '', complemento: '', endereco: '', cidade: '',
+        bairro: '', uf: '',
+    });
 
-  // Carregar os dados do cliente ao montar o componente
-  useEffect(() => {
-    const fetchClientData = async () => {
-      try {
-        const docRef = doc(db, 'usuarios', clientId);
-        const docSnap = await getDoc(docRef);
+    // Carregar os dados do cliente
+    useEffect(() => {
+        const fetchClientData = async () => {
+            if (!clientId) return;
+            try {
+                const docRef = doc(db, 'usuarios', clientId);
+                const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Partial<ClienteData>;
-          setInitialValues({
-            empresa: data.empresa || '',
-            cnpj: data.cnpj || '',
-            email: data.email || '',
-            telefone1: data.telefone1 || '',
-            telefone2: data.telefone2 || '',
-            cep: data.cep || '',
-            numero: data.numero || '',
-            complemento: data.complemento || '',
-            endereco: data.endereco || '',
-            cidade: data.cidade || '',
-            bairro: data.bairro || '',
-            uf: data.uf || '',
-          });
-        } else {
-          Toast.show({ type: 'error', text1: 'Cliente não encontrado' });
+                if (docSnap.exists()) {
+                    const data = docSnap.data() as Partial<ClienteData>;
+                    setInitialValues({
+                        empresa: data.empresa || '',
+                        cnpj: data.cnpj || '',
+                        email: data.email || '',
+                        telefone1: data.telefone1 || '',
+                        telefone2: data.telefone2 || '',
+                        cep: data.cep || '',
+                        numero: data.numero || '',
+                        complemento: data.complemento || '',
+                        endereco: data.endereco || '',
+                        cidade: data.cidade || '',
+                        bairro: data.bairro || '',
+                        uf: data.uf || '',
+                    });
+                } else {
+                    Toast.show({ type: 'error', text1: 'Cliente não encontrado' });
+                    router.back();
+                }
+            } catch (error) {
+                Toast.show({ type: 'error', text1: 'Erro ao carregar dados' });
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchClientData();
+    }, [clientId]);
+
+    const salvarCliente = async (dados: ClienteData) => {
+        try {
+            const docRef = doc(db, 'usuarios', clientId);
+            await updateDoc(docRef, dados);
+            Toast.show({ type: 'success', text1: 'Dados atualizados com sucesso!' });
+            setTimeout(() => router.back(), 1000);
+        } catch (error) {
+            Toast.show({ type: 'error', text1: 'Erro ao atualizar os dados' });
+            console.error(error);
         }
-      } catch (error) {
-        Toast.show({ type: 'error', text1: 'Erro ao carregar dados do cliente' });
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
     };
 
-    fetchClientData();
-  }, []);
-
-  const salvarCliente = async (dados: ClienteData) => {
-    try {
-      const docRef = doc(db, 'usuarios', clientId);
-      await updateDoc(docRef, dados);
-      Toast.show({ type: 'success', text1: 'Dados atualizados com sucesso!' });
-      router.back();
-    } catch (error) {
-      Toast.show({ type: 'error', text1: 'Erro ao atualizar os dados' });
-      console.error(error);
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={TEMAS.colors.verde} />
+            </View>
+        );
     }
-  };
 
-  if (loading) {
-    return <Text>Carregando...</Text>; // Ou exiba um spinner
-  }
+    return (
+        <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor={TEMAS.colors.verde} />
+            
+            {/* --- HEADER --- */}
+            <View style={styles.header}>
+                <View style={styles.headerLeft}>
+                    <BotaoVoltar />
+                </View>
+                <View style={styles.headerCenter}>
+                    <Text style={styles.headerTitle}>Editar Cliente</Text>
+                </View>
+                <View style={styles.headerRight}>
+                    <BotaoSair />
+                </View>
+            </View>
 
-  return (
-    <>
-      <Box
-        alignItems={"center"}
-        height="20"
-        width="100%"
-        flexDir={"row"}
-        paddingTop={10}
-        backgroundColor={TEMAS.colors.verde}>
-        {/* VOLTAR */}
-        <View>
-          <BotaoVoltar />
-        </View>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                
+                {/* LOGO */}
+                <View style={styles.logoContainer}>
+                    <Image source={Logo} style={styles.logo} resizeMode="contain" />
+                </View>
 
-        {/* TEXTO */}
-        <View style={{ flex: 5, }}>
-          <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>Editar Clientes</Text>
-        </View>
+                <Formik
+                    initialValues={initialValues}
+                    enableReinitialize
+                    validationSchema={Yup.object().shape({
+                        empresa: Yup.string().required('Campo obrigatório'),
+                        cnpj: Yup.string().required('Campo obrigatório'),
+                        email: Yup.string().required('Campo obrigatório').email('Email inválido'),
+                        telefone1: Yup.string().required('Campo obrigatório'),
+                        cep: Yup.string().required('Campo obrigatório'),
+                        numero: Yup.string().required('Campo obrigatório'),
+                        cidade: Yup.string().required('Campo obrigatório'),
+                        endereco: Yup.string().required('Campo obrigatório'),
+                        bairro: Yup.string().required('Campo obrigatório'),
+                        uf: Yup.string().required('Campo obrigatório')
+                    })}
+                    onSubmit={salvarCliente}
+                >
+                    {({ handleChange, handleBlur, handleSubmit, values, isSubmitting, errors, touched }) => (
+                        <View style={styles.formContainer}>
+                            
+                            <InputTexto 
+                                label="Empresa:"
+                                onBlur={handleBlur('empresa')}
+                                onChangeText={handleChange('empresa')}
+                                placeholder="Nome da Empresa"
+                                value={values.empresa} 
+                            />
+                            {touched.empresa && errors.empresa && <Text style={styles.errorText}>{errors.empresa}</Text>}
 
-        {/* SAIR */}
-        <View>
-          <BotaoSair />
-        </View>
-      </Box>
-      <Toast />
-      <ScrollView>
-        <Formik
-          initialValues={initialValues}
-          enableReinitialize
-          validationSchema={Yup.object().shape({
-            empresa: Yup.string().required('Campo "Empresa" obrigatório'),
-            cnpj: Yup.string().required('Campo "CNPJ" obrigatório'),
-            email: Yup.string().required('Campo "Email" obrigatório').email('Email inválido'),
-            telefone1: Yup.string().required('Campo "Telefone" obrigatório'),
-            cep: Yup.string().required('Campo "CEP" obrigatório'),
-            numero: Yup.string().required('Campo "Número" obrigatório'),
-            cidade: Yup.string().required('Campo "Cidade" obrigatório'),
-            endereco: Yup.string().required('Campo "Endereço" obrigatório'),
-            bairro: Yup.string().required('Campo "Bairro" obrigatório'),
-            uf: Yup.string().required('Campo "UF" obrigatório')
-          })}
-          onSubmit={salvarCliente}
-        >
-          {({ handleChange, handleBlur, handleSubmit, values, isSubmitting, isValid, errors, touched }) => (
-            <VStack flex={1} padding={5}>
+                            <InputTexto 
+                                label="CNPJ:"
+                                onBlur={handleBlur('cnpj')}
+                                onChangeText={handleChange('cnpj')}
+                                placeholder="CNPJ"
+                                value={values.cnpj} 
+                            />
+                            {touched.cnpj && errors.cnpj && <Text style={styles.errorText}>{errors.cnpj}</Text>}
 
-              {<Image size={100} alignSelf={'center'} width={150} marginTop="18" source={Logo} alt="background Login" />}
+                            <InputTexto 
+                                label="Email:"
+                                onBlur={handleBlur('email')}
+                                onChangeText={handleChange('email')}
+                                placeholder="E-mail"
+                                readOnly // Se o seu componente suportar, senão use editable={false}
+                                value={values.email} 
+                            />
+                            {touched.email && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-              {/* <Titulo marginTop={"15"} color={TEMAS.colors.verde}>Cadatro de Cliente</Titulo> */}
-              <InputTexto label="Empresa:"
-                onBlur={handleBlur('empresa')}
-                onChangeText={handleChange('empresa')}
-                placeholder="Nome"
-                value={values.empresa} />
-              {touched.empresa && errors.empresa && <Text color={TEMAS.colors.red}>{errors.empresa}</Text>}
+                            {/* LINHA DUPLA: TELEFONES */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <InputTexto
+                                        label="Telefone 1:"
+                                        onBlur={handleBlur('telefone1')}
+                                        onChangeText={handleChange('telefone1')}
+                                        placeholder="(00) 0000-0000"
+                                        value={values.telefone1} 
+                                    />
+                                    {touched.telefone1 && errors.telefone1 && <Text style={styles.errorText}>{errors.telefone1}</Text>}
+                                </View>
+                                <View style={styles.space} />
+                                <View style={styles.col}>
+                                    <InputTexto
+                                        label="Telefone 2:"
+                                        onBlur={handleBlur('telefone2')}
+                                        onChangeText={handleChange('telefone2')}
+                                        placeholder="(Op.)"
+                                        value={values.telefone2} 
+                                    />
+                                </View>
+                            </View>
 
-              <InputTexto label="CNPJ:"
-                onBlur={handleBlur('cnpj')}
-                onChangeText={handleChange('cnpj')}
-                placeholder="CNPJ"
-                value={values.cnpj} />
-              {touched.cnpj && errors.cnpj && <Text color={TEMAS.colors.red}>{errors.cnpj}</Text>}
+                            <InputTexto 
+                                label="Cidade:"
+                                onBlur={handleBlur('cidade')}
+                                onChangeText={handleChange('cidade')}
+                                placeholder="Cidade"
+                                value={values.cidade} 
+                            />
+                            {touched.cidade && errors.cidade && <Text style={styles.errorText}>{errors.cidade}</Text>}
 
-              <InputTexto label="Email:"
-                onBlur={handleBlur('email')}
-                onChangeText={handleChange('email')}
-                placeholder="E-mail"
-                readOnly
-                value={values.email} />
-              {touched.email && errors.email && <Text color={TEMAS.colors.red}>{errors.email}</Text>}
+                            <InputTexto 
+                                label="Endereço:"
+                                onBlur={handleBlur('endereco')}
+                                onChangeText={handleChange('endereco')}
+                                placeholder="Rua, Avenida..."
+                                value={values.endereco} 
+                            />
+                            {touched.endereco && errors.endereco && <Text style={styles.errorText}>{errors.endereco}</Text>}
 
-              <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
-                <Box marginRight={2}>
-                  <InputTexto
-                    onBlur={handleBlur('telefone1')}
-                    onChangeText={handleChange('telefone1')}
-                    width="180"
-                    bgcolor={TEMAS.colors.cinza}
-                    label="Telefones:"
-                    placeholder="Telefone"
-                    value={values.telefone1} />
-                  {touched.telefone1 && errors.telefone1 && <Text color={TEMAS.colors.red}>{errors.telefone1}</Text>}
-                </Box>
-                <Box>
-                  <InputTexto
-                    onBlur={handleBlur('telefone2')}
-                    onChangeText={handleChange('telefone2')}
-                    width="180"
-                    label="   "
-                    placeholder="Telefone"
-                    value={values.telefone2} />
-                  {touched.telefone2 && errors.telefone2 && <Text color={TEMAS.colors.red}>{errors.telefone2}</Text>}
-                </Box>
-              </Box>
+                            {/* LINHA DUPLA: CEP E NUMERO */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <InputTexto
+                                        label="CEP:"
+                                        onBlur={handleBlur('cep')}
+                                        onChangeText={handleChange('cep')}
+                                        placeholder="00000-000"
+                                        value={values.cep} 
+                                    />
+                                    {touched.cep && errors.cep && <Text style={styles.errorText}>{errors.cep}</Text>}
+                                </View>
+                                <View style={styles.space} />
+                                <View style={styles.col}>
+                                    <InputTexto
+                                        label="Número:"
+                                        onBlur={handleBlur('numero')}
+                                        onChangeText={handleChange('numero')}
+                                        placeholder="Nº"
+                                        value={values.numero} 
+                                    />
+                                    {touched.numero && errors.numero && <Text style={styles.errorText}>{errors.numero}</Text>}
+                                </View>
+                            </View>
 
-              <InputTexto label="Cidade:"
-                onBlur={handleBlur('cidade')}
-                onChangeText={handleChange('cidade')}
-                placeholder="Cidade"
-                value={values.cidade} />
-              {touched.cidade && errors.cidade && <Text color={TEMAS.colors.red}>{errors.cidade}</Text>}
+                            <InputTexto 
+                                label="Complemento:"
+                                onBlur={handleBlur('complemento')}
+                                onChangeText={handleChange('complemento')}
+                                placeholder="Apto, Bloco..."
+                                value={values.complemento} 
+                            />
 
-              <InputTexto label="Endereço:"
-                onBlur={handleBlur('endereco')}
-                onChangeText={handleChange('endereco')}
-                placeholder="Endereço"
-                value={values.endereco} />
-              {touched.endereco && errors.endereco && <Text color={TEMAS.colors.red}>{errors.endereco}</Text>}
+                            {/* LINHA DUPLA: BAIRRO E UF */}
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <InputTexto
+                                        label="Bairro:"
+                                        onBlur={handleBlur('bairro')}
+                                        onChangeText={handleChange('bairro')}
+                                        placeholder="Bairro"
+                                        value={values.bairro} 
+                                    />
+                                    {touched.bairro && errors.bairro && <Text style={styles.errorText}>{errors.bairro}</Text>}
+                                </View>
+                                <View style={styles.space} />
+                                <View style={styles.col}>
+                                    <InputTexto
+                                        label="UF:"
+                                        onBlur={handleBlur('uf')}
+                                        onChangeText={handleChange('uf')}
+                                        placeholder="UF"
+                                        value={values.uf} 
+                                    />
+                                    {touched.uf && errors.uf && <Text style={styles.errorText}>{errors.uf}</Text>}
+                                </View>
+                            </View>
 
-              <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
-                <Box marginRight={2}>
-                  <InputTexto
-                    width="180"
-                    onBlur={handleBlur('cep')}
-                    onChangeText={handleChange('cep')}
-                    bgcolor={TEMAS.colors.cinza}
-                    label="CEP:"
-                    placeholder="CEP"
-                    value={values.cep} />
-                  {touched.cep && errors.cep && <Text color={TEMAS.colors.red}>{errors.cep}</Text>}
-                </Box>
-                <Box>
-                  <InputTexto
-                    onBlur={handleBlur('numero')}
-                    onChangeText={handleChange('numero')}
-                    width="180"
-                    label="Número:"
-                    placeholder="Número"
-                    value={values.numero} />
-                  {touched.numero && errors.numero && <Text color={TEMAS.colors.red}>{errors.numero}</Text>}
-                </Box>
-              </Box>
+                            <View style={styles.footerButtons}>
+                                <Botoes onPress={() => handleSubmit()} disabled={isSubmitting}>
+                                    {isSubmitting ? 'Salvando...' : 'Salvar Edição'}
+                                </Botoes>
+                                
+                                <View style={{ height: 10 }} />
+                                
+                                <Botoes onPress={() => router.back()} bgColor={TEMAS.colors.cinza}>
+                                    Cancelar
+                                </Botoes>
+                            </View>
 
-              <InputTexto label="Complemento:"
-                onBlur={handleBlur('complemento')}
-                onChangeText={handleChange('complemento')}
-                placeholder="Complemento"
-                value={values.complemento} />
-              {touched.complemento && errors.complemento && <Text color={TEMAS.colors.red}>{errors.complemento}</Text>}
-
-              <Box flexDirection={"row"} flex={1} alignSelf={'center'}>
-                <Box marginRight={2}>
-                  <InputTexto
-                    onBlur={handleBlur('bairro')}
-                    onChangeText={handleChange('bairro')}
-                    width="180"
-                    bgcolor={TEMAS.colors.cinza}
-                    label="Bairro:"
-                    placeholder="Bairro"
-                    value={values.bairro} />
-                  {touched.bairro && errors.bairro && <Text color={TEMAS.colors.red}>{errors.bairro}</Text>}
-                </Box>
-                <Box>
-                  <InputTexto
-                    onBlur={handleBlur('uf')}
-                    onChangeText={handleChange('uf')}
-                    width="180"
-                    label="UF:"
-                    placeholder="UF"
-                    value={values.uf} />
-                  {touched.uf && errors.uf && <Text color={TEMAS.colors.red}>{errors.uf}</Text>}
-                </Box>
-              </Box>
-              <Botoes onPress={() => handleSubmit()} disabled={isSubmitting} >{isSubmitting ? 'Enviando' : 'Salvar Edição'}</Botoes>
-              <Botoes onPress={() => router.back()} backgroundColor={TEMAS.colors.cinza}>Cancelar</Botoes>
-            </VStack>
-          )}</Formik>
-      </ScrollView>
-    </>
-  )
+                        </View>
+                    )}
+                </Formik>
+            </ScrollView>
+            
+            {/* O Toast precisa ficar na raiz ou no layout principal, mas pode ficar aqui se não tiver outro lugar */}
+            <Toast />
+        </SafeAreaView>
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    // HEADER
+    header: {
+        width: '100%',
+        height: 100,
+        paddingTop: Platform.OS === 'android' ? 35 : 50,
+        paddingHorizontal: 16,
+        paddingBottom: 10,
+        backgroundColor: TEMAS.colors.verde,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    headerLeft: {
+        flex: 1,
+        alignItems: 'flex-start',
+    },
+    headerCenter: {
+        flex: 4,
+        alignItems: 'center',
+    },
+    headerRight: {
+        flex: 1,
+        alignItems: 'flex-end',
+    },
+    headerTitle: {
+        color: TEMAS.colors.branco,
+        fontSize: 22,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    // CONTEÚDO
+    scrollContent: {
+        paddingBottom: 40,
+    },
+    logoContainer: {
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    logo: {
+        width: 150,
+        height: 100,
+    },
+    formContainer: {
+        padding: 20,
+    },
+    // GRID SYSTEM (LINHAS E COLUNAS)
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 5,
+    },
+    col: {
+        flex: 1,
+    },
+    space: {
+        width: 10, // Espaço entre colunas
+    },
+    // TEXTOS
+    errorText: {
+        color: 'red', // ou TEMAS.colors.red
+        fontSize: 12,
+        marginBottom: 10,
+        marginLeft: 5,
+    },
+    footerButtons: {
+        marginTop: 20,
+    }
+});

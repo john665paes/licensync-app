@@ -183,6 +183,28 @@ export default function CreateClient() {
                 />
               </View>
             </View>
+            <InputLabel
+              label="Complemento (Opcional)"
+              placeholder="Apartamento, bloco, etc."
+              value={values.complemento}
+              onChangeText={handleChange('complemento')}
+              error={touched.complemento ? errors.complemento : ''}
+            />
+            <InputLabel
+              label="Observações (Opcional)"
+              placeholder="Observações adicionais"
+              value={values.observacoes}
+              onChangeText={handleChange('observacoes')}
+              error={touched.observacoes ? errors.observacoes : ''}
+            />
+            <View>
+
+            </View>
+            <View>
+              
+            </View>
+
+
             <View style={styles.footerButtons}>
               <TouchableOpacity style={styles.btnCancel} onPress={() => router.back()}>
                 <Text style={styles.txtCancel}>Cancelar</Text>
@@ -200,7 +222,11 @@ export default function CreateClient() {
 
   return (
     <SafeAreaView style={{ flex: 3 }}>
-      <Homeheader />
+      <Homeheader 
+        title="Cadastrar Cliente"
+        onBackPress={() => router.back()}
+      
+      />
       <ScreenContainer
         bottomContent={<DashboardContent />}
       />

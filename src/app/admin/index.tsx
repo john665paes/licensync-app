@@ -179,7 +179,7 @@ export default function IndexADM() {
                         data={cliente} 
                         // Mudei o clique para usar a rota que estava no seu código: /admin/cadastroCliente/ID
                         // ainda falta finalizar a pag que recebe o ID pqp veii
-                        onPress={() => router.push(`/admin/cadastroCliente/${cliente.id}`)} 
+                        onPress={() => router.push(`/admin/ClientDetails/${cliente.id}`)} 
                     />
                 ))}
                  {listaClientes.length === 0 && (

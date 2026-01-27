@@ -1,73 +1,74 @@
-import {
-  VStack, Text, Box,
-  Button,
-  Divider,
-  HStack,
-  ScrollView,
-} from "native-base";
-import React, { useCallback, useEffect, useState } from "react";
-import { Titulo } from "../../../componentes/titulo";
-import { InputTexto } from "../../../componentes/formulario";
-import { Botoes } from "../../../componentes/botoes";
-import { RefreshControl, View } from "react-native";
-import { BotaoVoltar } from "../../../componentes/botoes/back";
-import { BotaoSair } from "../../../componentes/botoes/exit";
-import { Linking } from "react-native";
-import { TEMAS } from "../../../estilos/temas";
+import React, { useEffect, useState } from "react";
+import {   View,  Text,  StyleSheet,  ScrollView,  TouchableOpacity, Image,  Alert,  
+  RefreshControl,  ActivityIndicator,  Linking,  SafeAreaView,  Platform,  StatusBar} from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { db, storage } from "../../../config/firebase";
-import { collection, deleteDoc, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
-import * as DocumentPicker from 'expo-document-picker';
+import {  collection,  deleteDoc,  doc,  getDoc,  getDocs,  updateDoc,} from "firebase/firestore";
+import * as DocumentPicker from "expo-document-picker";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import moment from 'moment';
+import moment from "moment";
+import HomeHeader from "../../../componentes/HomeHeader";
+import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
+import { theme } from "../../../estilos/themes";
+
+// --- CONFIGURAÇÃO DE CORES E ESTILOS GERAIS ---
+const COLORS = {
+  primary: theme.colors.primary, // Verde similar ao da imagem
+  background: "#F9FAFB", // Cinza bem claro de fundo
+  white: "#FFFFFF",
+  textDark: "#1F2937",
+  textGray: "#6B7280",
+  border: "#E5E7EB",
+  red: "#EF4444",
+  orange: "#F59E0B",
+};
+
+const PLACEHOLDER_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/BYD_Auto_logo_%282022%29.svg/1200px-BYD_Auto_logo_%282022%29.svg.png";
+
 export default function CadastroCliente() {
-  const { id }: { id: string } = useLocalSearchParams();
-  const [usuario, setUsuario] = useState<any>({});
-  const [condicionantes, setCondicionantes] = useState<any[]>([]);
-
-
-  //Arrumar o reload
+  const { id } = useLocalSearchParams();
+  const [usuario, setUsuario] = useState({});
+  const [condicionantes, setCondicionantes] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  // function do reload
+  const [isUploading, setIsUploading] = useState(false);
+
+  
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await handleBuscarCondicionantes();
+    await Promise.all([handleBuscarUsuario(), handleBuscarCondicionantes()]);
     setRefreshing(false);
   };
 
-  // Função para buscar dados do usuário
   const handleBuscarUsuario = async () => {
     try {
       const snapshot = await getDoc(doc(db, "usuarios", id));
-      const dados = snapshot.data();
-      setUsuario(dados);
-    } catch (error) {
-      console.error("Erro ao buscar dados do usuário:", error);
-    }
-  };
-
-  // Função para buscar condicionantes
-  const handleBuscarCondicionantes = async () => {
-    try {
-      // Obtém a coleção de condicionantes
-      const snapshot = await getDocs(collection(db, "usuarios", id, "condicionantes"));
-
-      // Atualiza o estado com os dados da coleção
-      if (!snapshot.empty) {
-        const condicionantesData = snapshot.docs.map(doc => ({
-          id: doc.id, // Inclui o ID do documento no objeto
-          ...doc.data()
-        }));
-        setCondicionantes(condicionantesData);
-      } else {
-        console.log("Nenhum condicionante encontrado.");
+      if (snapshot.exists()) {
+        setUsuario(snapshot.data());
       }
     } catch (error) {
-      console.error("Erro ao buscar condicionantes:", error);
+      console.error("Erro usuário:", error);
     }
   };
 
-  // Função para inserir a licença
+  const handleBuscarCondicionantes = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "usuarios", id, "condicionantes"));
+      if (!snapshot.empty) {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCondicionantes(data);
+      } else {
+        setCondicionantes([]);
+      }
+    } catch (error) {
+      console.error("Erro condicionantes:", error);
+    }
+  };
+
   const inserirLicenca = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -76,223 +77,325 @@ export default function CadastroCliente() {
       });
 
       if (!result.canceled && id) {
+        setIsUploading(true);
         const file = result.assets[0];
-        const fileName = file.name || "licença.pdf";
-        const refLicenca = ref(storage, `arquivos/${id}/${fileName}`);
-
-        const blobStream = await fetch(file.uri).then((r) => r.blob());
-        await uploadBytes(refLicenca, blobStream);
-
+        const fileName = file.name || "licenca.pdf";
+        const refLicenca = ref(storage, `arquivos/${id}/${Date.now()}_${fileName}`);
+        
+        const response = await fetch(file.uri);
+        const blob = await response.blob();
+        
+        await uploadBytes(refLicenca, blob);
         const url = await getDownloadURL(refLicenca);
+        
         await updateDoc(doc(db, "usuarios", id), { licenca: url });
-
-        setUsuario(prevState => ({ ...prevState, licenca: url }));
-      } else {
-        console.log("Operação cancelada ou ID do usuário não encontrado.");
+        setUsuario((prev) => ({ ...prev, licenca: url }));
+        Alert.alert("Sucesso", "Licença enviada!");
       }
     } catch (error) {
-      console.error("Erro durante o processo de upload da licença:", error);
+      console.error(error);
+      Alert.alert("Erro", "Falha no upload.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  // Função para extrair o nome do arquivo a partir da URL
-  const extractFileName = (url: string) => {
-    if (!url) {
-      console.error("A URL da licença está indefinida ou vazia");
-      return "Licença não disponível";
-    }
-
-    const startIndex = url.indexOf(id);
-    if (startIndex === -1) {
-      console.error("ID não encontrado na URL");
-      return "Licença não disponível";
-    }
-
-    const filePath = url.substring(startIndex + id.length);
-    const fileNameWithParams = filePath.substring(filePath.lastIndexOf('/') + 1);
-    const fileName = fileNameWithParams.split('?')[0];
-
-    return decodeURIComponent(fileName);
+  const handleDeletarCondicionante = (idItem: string) => {
+    Alert.alert("Excluir", "Deseja apagar esta condicionante?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Apagar",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteDoc(doc(db, "usuarios", id, "condicionantes", idItem));
+            setCondicionantes((prev) => prev.filter((c) => c.id !== idItem));
+          } catch (e) {
+            Alert.alert("Erro", "Não foi possível apagar.");
+          }
+        },
+      },
+    ]);
   };
 
-  // Exibe o nome do arquivo da licença
-  const fileName = usuario?.licenca ? extractFileName(usuario?.licenca) : "Licença não disponível";
+  const DashboardContent = () => (
+    <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {/* --- CABEÇALHO / PERFIL --- */}
+        <View style={styles.profileContainer}>
+          <View style={styles.avatarWrapper}>
+            <Image
+              source={{ uri: PLACEHOLDER_IMAGE }} // Troque por usuario?.fotoUrl se tiver
+              style={styles.avatar}
+            />
+          </View>
+          <Text style={styles.companyName}>
+            {usuario?.empresa || "Carros Elétricos do Brasil"}
+          </Text>
+          <Text style={styles.contactName}>
+            {usuario?.nomeContato || (usuario?.email ? usuario.email.split('@')[0] : "José Inácio Alcântara")}
+          </Text>
+        </View>
+
+        {/* --- TÍTULO DA SEÇÃO E BOTÃO 'CRIAR NOVO' --- */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Condicionantes</Text>
+          
+          <TouchableOpacity 
+            style={styles.createButton}
+            onPress={() => router.push(`/../admin/addCondicionante?id=${id}`)}
+          >
+            <Feather name="plus-square" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={styles.createButtonText}>Criar Nova</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* --- LISTA --- */}
+        <View style={styles.listContainer}>
+          {condicionantes.length > 0 ? (
+            condicionantes
+              .sort((a, b) => moment(a.data).toDate() - moment(b.data).toDate())
+              .map((item, index) => {
+                const { color, icon } = getStatusInfo(item.data);
+                const isLast = index === condicionantes.length - 1;
+
+                return (
+                  <TouchableOpacity
+                    key={item.id || index}
+                    style={[styles.listItem, !isLast && styles.separator]}
+                    onPress={() => handleDeletarCondicionante(item.id)}
+                  >
+                    {/* Ícone Esquerda */}
+                    <View style={styles.iconWrapper}>
+                      <Feather name={icon} size={24} color={color} />
+                    </View>
+
+                    {/* Textos */}
+                    <View style={styles.textWrapper}>
+                      <Text style={styles.itemTitle} numberOfLines={1}>
+                        {item.condicionante || "Sem título"}
+                      </Text>
+                      <Text style={styles.itemDate}>
+                        Prazo: {item.data ? moment(item.data).format("DD/MM/YYYY") : "--/--/----"}
+                      </Text>
+                    </View>
+
+                    {/* Seta Direita */}
+                    <Feather name="chevron-right" size={20} color={COLORS.textGray} />
+                  </TouchableOpacity>
+                );
+              })
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>Nenhuma condicionante encontrada.</Text>
+            </View>
+          )}
+        </View>
+
+        {/* --- BOTÃO GRANDE DE LICENÇA --- */}
+        <View style={styles.footerContainer}>
+          <TouchableOpacity
+            style={styles.largeButton}
+            onPress={inserirLicenca}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <ActivityIndicator color={COLORS.primary} />
+            ) : (
+              <Text style={styles.largeButtonText}>Adicionar Licença</Text>
+            )}
+          </TouchableOpacity>
+          
+          {usuario?.licenca && (
+             <TouchableOpacity style={{ marginTop: 12 }} onPress={() => Linking.openURL(usuario.licenca)}>
+                <Text style={{ color: COLORS.primary, textAlign: 'center', textDecorationLine: 'underline' }}>
+                   Ver licença atual
+                </Text>
+             </TouchableOpacity>
+          )}
+        </View>
+
+      </ScrollView>
+
+  );
 
   useEffect(() => {
     handleBuscarUsuario();
     handleBuscarCondicionantes();
   }, []);
 
-  const getButtonColor = (data) => {
+  // --- LÓGICA VISUAL ---
+  const getStatusInfo = (dataString: moment.MomentInput) => {
+    if (!dataString) return { color: COLORS.textGray, icon: "help-circle" };
     
-    const dataHoje = moment()
-    const dataPrazo = moment(data, 'YYYY-MM-DD')
-    const diasRestantes = dataPrazo.diff(dataHoje, 'days')
-    
-    
-    //Já passou o prazo 
-    if (moment(data).isBefore(moment()))
-      return "red";
-    else if (diasRestantes <= 30) //É menos de 30 dias
-      return "orange";
-    else // Tem mais de 30 dias
-      return "green"; 
+    const dataPrazo = moment(dataString, "YYYY-MM-DD");
+    const hoje = moment();
+    const diasRestantes = dataPrazo.diff(hoje, "days");
+
+    if (dataPrazo.isBefore(hoje, 'day')) return { color: COLORS.red, icon: "alert-circle" };
+    if (diasRestantes <= 30) return { color: COLORS.orange, icon: "clock" };
+    return { color: COLORS.primary, icon: "check-circle" };
   };
 
   return (
-    <>
-      <Box
-        alignItems={"center"}
-        height="20"
-        width="100%"
-        flexDir={"row"}
-        paddingTop={10}
-        backgroundColor={TEMAS.colors.verde}>
-        {/* VOLTAR */}
-        <View>
-          <BotaoVoltar />
-        </View>
+    <SafeAreaView style={{ flex: 3 }}>
+      <HomeHeader
+        title="Detalhes do Cliente"
+        onBackPress={() => router.back()}
+        />
 
-        {/* TEXTO */}
-        <View style={{ flex: 5, }}>
-          <Text color={TEMAS.colors.branco} fontSize={"2xl"} textAlign={"center"}>Cliente</Text>
-        </View>
-
-        {/* SAIR */}
-        <View>
-          <BotaoSair />
-        </View>
-      </Box>
-
-      <ScrollView refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
-
-        <VStack flex={1} padding={5}>
-          <InputTexto textAlign="left" label="Empresa" readOnly>{usuario?.empresa}</InputTexto>
-          <InputTexto textAlign="left" label="CNPJ" readOnly>{usuario?.cnpj}</InputTexto>
-          <InputTexto textAlign="left" readOnly label="E-mail">{usuario?.email}</InputTexto>
-
-          <Box flexDirection={"row"} alignItems={"center"} justifyContent={"center"} marginBottom={3}>
-            <Box marginRight={2}>
-              <InputTexto
-                width="180"
-                readOnly
-                bgcolor={TEMAS.colors.cinza}
-                label="Telefone 1:"
-                value={usuario?.telefone1}
-              />
-            </Box>
-            <Box>
-              <InputTexto
-                readOnly
-                width="180"
-                label="Telefone 2:"
-                value={usuario?.telefone2}
-              />
-            </Box>
-          </Box>
-
-          <Botoes
-            width={'100%'}
-            onPress={() => router.push(`/admin/addCondicionante?id=${id}`)}  // Aqui, userId seria a variável com o valor do id
-          >Nova Condicionante</Botoes>
-
-          <Botoes width={'100%'} onPress={inserirLicenca}>Inserir Licença</Botoes>
-          {/* {usuario?.licenca && <Text>Licença já inserida</Text>} */}
-          <Botoes width={'100%'} onPress={() => router.push(`/admin/editar?id=${id}`)}>Editar Cliente</Botoes>
-
-          <Divider mt={5} />
-          <Titulo mt={0}>Condiconantes Concluidas</Titulo>
-          <Divider mt={1} />
-
-          <Botoes width={'100%'} onPress={() => router.push(`/admin/condicionantesConcluidos?id=${id}`)}>Ver Condicionantes</Botoes>
-
-          <Divider mt={5} />
-          <Titulo mt={0}>Licença prefeitura</Titulo>
-          <Divider mt={1} />
-
-          <View style={{ alignItems: "center" }}>
-            <Button
-              mt={3}
-              borderRadius="xl"
-              width="80%"
-              height="10"
-              bg="gray.700"
-              onPress={() => Linking.openURL(usuario?.licenca)}
-            >
-              {fileName}
-            </Button>
-          </View>
-
-          <Divider mt={5} />
-          <Titulo mt={0}>Condicionantes</Titulo>
-          <Divider mt={1} />
-
-          {condicionantes.length > 0 ? (
-            condicionantes
-            .sort((a, b) => moment(a.data).toDate().valueOf() - moment(b.data).toDate().valueOf())
-            .map((item, index) => (
-              <Box key={index} mt={2}>
-                {/* Exibe uma parte do condicionante (limite de 100 caracteres, por exemplo) */}
-                <Button
-                  mt={2}
-                  bgColor={"gray.500"}
-                  color="black"
-                  borderRadius={"xl"}
-                  >
-
-                  {item.condicionante && item.condicionante.length > 80
-                    ? item.condicionante.substring(0, 80) + "..."
-                    : item.condicionante || "Condicionante não disponível"}</Button>
-
-                <HStack justifyContent="space-between">
-                  {item.data && (
-
-                    <Text alignItems={"self-end"}
-                      mt={2}
-                      fontSize={"md"}
-                      bold
-                      style={{
-                        color: getButtonColor(item.data),
-                      }}
-                      >
-                      {moment(item.data).format("DD/MM/YYYY")}
-                    </Text>
-
-                  )}
-                  <Button
-                    alignItems={"self-end"}
-                    mt={2}
-                    width={'30%'}
-                    height={"80%"}
-                    bg={"tomato"}
-                    borderRadius={"xl"}
-                    onPress={async () => {
-                      if (!item?.id) {
-                        console.error("ID do condicionante não encontrado.");
-                        return;
-                      }
-                      try {
-                        const condicionanteRef = doc(db, "usuarios", id, "condicionantes", item.id);
-                        await deleteDoc(condicionanteRef);
-                        setCondicionantes((prev) => prev.filter((c) => c.id !== item?.id));
-                      } catch (error) {
-                        console.error("Erro ao deletar condicionante:", error);
-                      }
-                    }}
-                  >Apagar</Button>
-                </HStack>
-
-                <Divider mt={3} />
-              </Box>
-            ))
-          ) : (
-            <Text>Nenhuma condicionante encontrada.</Text>
-          )}
-        </VStack>
-
-      </ScrollView>
-    </>
+      <ScreenContainer
+        bottomContent={<DashboardContent />}
+      />
+      
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    paddingTop: Platform.OS === 'android' ? 25 : 0, // Ajuste para Android
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  // Perfil
+  profileContainer: {
+    alignItems: "center",
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+  },
+  avatarWrapper: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    borderColor: COLORS.primary, // Borda verde ao redor da foto
+    padding: 3, // Espaço entre borda e foto
+    backgroundColor: COLORS.white,
+    marginBottom: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 40,
+    resizeMode: 'contain',
+  },
+  companyName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.textDark,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  contactName: {
+    fontSize: 14,
+    color: COLORS.textGray,
+    textAlign: "center",
+  },
+  // Cabeçalho da Seção
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    marginTop: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4B5563",
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: "transparent",
+  },
+  createButtonText: {
+    color: COLORS.primary,
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  // Lista
+  listContainer: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16, // Margem lateral para parecer um "card" flutuante
+    borderRadius: 12,
+    // Sombra suave (Shadow)
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    overflow: "hidden", // Garante que itens não passem da borda arredondada
+  },
+  listItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.white,
+  },
+  separator: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6", // Linha divisória bem fina
+  },
+  iconWrapper: {
+    width: 32,
+    alignItems: "center",
+    marginRight: 12,
+  },
+  textWrapper: {
+    flex: 1,
+  },
+  itemTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.textDark,
+    marginBottom: 2,
+  },
+  itemDate: {
+    fontSize: 12,
+    color: COLORS.textGray,
+  },
+  emptyState: {
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: COLORS.textGray,
+    fontSize: 14,
+  },
+  // Rodapé
+  footerContainer: {
+    marginTop: 24,
+    paddingHorizontal: 20,
+  },
+  largeButton: {
+    width: "100%",
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  largeButtonText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});
