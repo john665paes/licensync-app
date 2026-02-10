@@ -14,8 +14,8 @@ import { theme } from "../../../estilos/themes";
 
 // --- CONFIGURAÇÃO DE CORES E ESTILOS GERAIS ---
 const COLORS = {
-  primary: theme.colors.primary, // Verde similar ao da imagem
-  background: "#F9FAFB", // Cinza bem claro de fundo
+  primary: theme.colors.primary, 
+  background: "#F9FAFB", 
   white: "#FFFFFF",
   textDark: "#1F2937",
   textGray: "#6B7280",
@@ -132,10 +132,10 @@ export default function CadastroCliente() {
             />
           </View>
           <Text style={styles.companyName}>
-            {usuario?.empresa || "Carros Elétricos do Brasil"}
+            {usuario?.empresa}
           </Text>
           <Text style={styles.contactName}>
-            {usuario?.nomeContato || (usuario?.email ? usuario.email.split('@')[0] : "José Inácio Alcântara")}
+            {usuario?.nomeContato || (usuario?.email ? usuario.email.split('@')[0] : "Insira o nome do contato")}
           </Text>
         </View>
 

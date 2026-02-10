@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, LogBox, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, LogBox, ActivityIndicator, StatusBar } from "react-native";
 import Logo from "../../assets/imgs/login.svg";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../../config/firebase";
@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import { TEMAS } from "../../estilos/temas";
+import { theme } from "../../estilos/themes";
 
 export default function Login() {
 
@@ -40,6 +41,9 @@ export default function Login() {
 
 
   return (
+    <>
+    <StatusBar backgroundColor={theme.colors.background} />
+    
     <Formik
       initialValues={{ email: '', senha: '' }}
       validationSchema={Yup.object().shape({
@@ -48,14 +52,9 @@ export default function Login() {
         senha: Yup.string().required('Informe sua senha').min(3, 'A senha precisa ter 3 caracteres')
       })}
       onSubmit={handleLogin}>
-      {({ errors,
-        touched,
-        handleBlur,
-        handleChange,
-        handleSubmit,
-        isSubmitting, }) => (
+      {({ errors, touched, handleBlur, handleChange, handleSubmit, isSubmitting, }) => (
 
-        <View style={styles.container} >
+        <View style={styles.container}>
           {/* PARTE SUPERIOR BRANCA */}
           <View style={styles.topContainer}>
             <Logo width={200} height={150} />
@@ -80,7 +79,7 @@ export default function Login() {
               secureTextEntry />
 
             {errors.senha && touched.senha && (
-              <Text >{errors.senha}</Text>
+              <Text>{errors.senha}</Text>
             )}
             {isSubmitting ?
               (<ActivityIndicator color={TEMAS.colors.verde} size={30} />)
@@ -104,7 +103,7 @@ export default function Login() {
         </View>
 
       )}
-    </Formik>
+    </Formik></>
   );
 
 }
@@ -127,7 +126,8 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 18,
-    color: "#2d8b4e",
+    color: "#2d8b4e", 
+    color2: "#034024",
     marginTop: 4,
     fontWeight: 'bold'//letra em negritoo 
   },

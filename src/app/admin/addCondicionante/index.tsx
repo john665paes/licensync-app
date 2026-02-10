@@ -23,6 +23,9 @@ import { Botoes } from "../../../componentes/botoes";
 import { BotaoVoltar } from "../../../componentes/botoes/back";
 import { BotaoSair } from "../../../componentes/botoes/exit";
 import { TEMAS } from "../../../estilos/temas";
+import HomeHeader from "../../../componentes/HomeHeader";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
 
 export default function AddCondicioante() {
     const [date, setDate] = useState<string>(moment().format('YYYY-MM-DD'));
@@ -71,27 +74,8 @@ export default function AddCondicioante() {
             Alert.alert("Erro", "Não foi possível salvar o condicionante.");
         }
     };
-
-    return (
-        <View style={styles.container}>
-            {/* Header / Cabeçalho */}
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <BotaoVoltar />
-                </View>
-
-                <View style={styles.headerCenter}>
-                    <Text style={styles.headerTitle}>
-                        Adicionar Condicionante
-                    </Text>
-                </View>
-
-                <View style={styles.headerRight}>
-                    <BotaoSair />
-                </View>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+    const DashboradContent = () => (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.formContainer}>
                     
                     {/* Campo de texto (TextArea) */}
@@ -151,7 +135,22 @@ export default function AddCondicioante() {
 
                 </View>
             </ScrollView>
-        </View>
+    );
+    return (
+        <SafeAreaView style={{flex: 3,}}>
+            <HomeHeader
+            title="Inserir Condicionante"
+            onBackPress={() => router.back()}
+            />
+
+        <ScreenContainer
+            bottomContent={<DashboradContent />}
+
+        />
+            
+
+
+        </SafeAreaView>    
     );
 }
 

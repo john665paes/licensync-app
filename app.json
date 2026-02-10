@@ -24,7 +24,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.john665paes.licensync"
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
@@ -42,9 +43,8 @@
         "projectId": "85c51b15-6157-40b1-a091-adb010c24942"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion":  "1.0.0"
+    ,
     "updates": {
       "url": "https://u.expo.dev/85c51b15-6157-40b1-a091-adb010c24942"
     },
