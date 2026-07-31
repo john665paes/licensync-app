@@ -101,7 +101,14 @@ export default function DetalhesCondicionante() {
 
       setCondicionante({ ...condicionante, condicionante: textoEditado, data: dataEditada });
       setIsEditing(false);
-      Alert.alert("Sucesso", "Condicionante atualizada com sucesso!");
+      
+      // --- ALTERAÇÃO AQUI: Adicionado a ação de voltar no botão "OK" do Alert ---
+      Alert.alert(
+        "Sucesso", 
+        "Condicionante atualizada com sucesso!",
+        [{ text: "OK", onPress: () => router.back() }]
+      );
+      
     } catch (error) {
       console.error(error);
       Alert.alert("Erro", "Não foi possível salvar as alterações.");
