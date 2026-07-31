@@ -3,6 +3,7 @@ import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/aut
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_apiKey,
@@ -17,15 +18,20 @@ const firebaseConfig = {
 let app;
 let auth: any;
 
-// Verifica se o app já foi inicializado (Evita o erro already-initialized no Fast Refresh)
+// Verifica se o app já foi inicializado (Evita crash no Expo Go)
 if (!getApps().length) {
-  // Se não existir, inicializa o app e o Auth com AsyncStorage
   app = initializeApp(firebaseConfig);
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
-  });
+  
+  // A MÁGICA: Decide como fazer o login dependendo de onde o app tá rodando
+  if (Platform.OS === 'web') {
+    auth = getAuth(app); // Se for navegador, usa o padrão da web
+  } else {
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage) // Se for celular, usa o AsyncStorage
+    });
+  }
 } else {
-  // Se já existir (porque você salvou o arquivo), ele só pega a instância que já está rodando
+  // Se já existir (porque salvou o arquivo), reaproveita a conexão
   app = getApp();
   auth = getAuth(app);
 }
