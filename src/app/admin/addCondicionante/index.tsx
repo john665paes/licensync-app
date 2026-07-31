@@ -1,57 +1,84 @@
 import React, { useState } from "react";
 import { 
-    View, 
-    Text, 
-    ScrollView, 
-    TextInput, 
-    StyleSheet, 
-    Alert,
-    Platform,
-    StatusBar
+    View, Text, ScrollView, TextInput, StyleSheet, Alert,
+    Platform, TouchableOpacity, ActivityIndicator 
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { format } from 'date-fns';
 import moment from 'moment';
+import { Feather } from "@expo/vector-icons";
 
-// Firebase imports
+// Firebase
 import { db } from "../../../config/firebase";
 import { addDoc, collection } from "firebase/firestore";
 
-// Componentes do projeto (assumindo que já foram migrados ou são compatíveis)
-import { Botoes } from "../../../componentes/botoes";
-import { BotaoVoltar } from "../../../componentes/botoes/back";
-import { BotaoSair } from "../../../componentes/botoes/exit";
-import { TEMAS } from "../../../estilos/temas";
+// Componentes do projeto
 import HomeHeader from "../../../componentes/HomeHeader";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
+import { theme } from "../../../estilos/themes";
+import { UserCog, LogOut } from 'lucide-react-native';
 
-export default function AddCondicioante() {
+const COLORS = {
+  primary: theme.colors.primary, 
+  background: "#F9FAFB", 
+  white: "#FFFFFF",
+  textDark: "#1F2937",
+  textGray: "#6B7280",
+  border: "#E5E7EB",
+  red: "#EF4444",
+  green: "#10B981"
+};
+
+export default function AddCondicionante() {
+    const { id } = useLocalSearchParams(); 
+
     const [date, setDate] = useState<string>(moment().format('YYYY-MM-DD'));
-    const [show, setShow] = useState(false);
+    const [showPicker, setShowPicker] = useState(false);
     const [conteudoAdd, setConteudoAdd] = useState('');
-    const { id }: { id: string } = useLocalSearchParams(); 
+    const [loading, setLoading] = useState(false);
 
-    // Função chamada quando a data é selecionada
-    const onChange = (event: any, selectedDate?: Date) => {
-        if (event.type === 'set' && selectedDate) {
-            let currentDate = moment(selectedDate).format('YYYY-MM-DD');
-            setShow(false);
-            setDate(currentDate);
-        } else {
-            setShow(false);
+    // --- MENU SUPERIOR ---
+    const opcoesMenu = [
+        { 
+          id: 1, 
+          label: 'Inicio', 
+          icon: <UserCog size={20} color="#333" />, 
+          onPress: () => router.push('admin/') 
+        },
+        { 
+          id: 2, 
+          label: 'Sair', 
+          icon: <LogOut size={20} color={COLORS.red} />, 
+          isDestructive: true,
+          onPress: () => {
+            Alert.alert("Sair", "Deseja realmente sair?", [
+                { text: "Cancelar", style: "cancel" },
+                { text: "Sair", style: "destructive", onPress: () => router.replace('/') }
+            ]);
+          }
+        },
+    ];
+
+    // --- MANIPULAÇÃO DO CALENDÁRIO (ATUALIZADO) ---
+    // Função chamada quando uma data é confirmada
+    const handleDateChange = (event: any, selectedDate?: Date) => {
+        if (Platform.OS === 'android') setShowPicker(false);
+        
+        if (selectedDate) {
+            setDate(moment(selectedDate).format('YYYY-MM-DD'));
         }
     };
 
-    const showDatePicker = () => {
-        setShow(true);
+    // Função chamada quando o usuário clica fora ou cancela (Fecha o picker)
+    const handleDismiss = () => {
+        setShowPicker(false);
     };
 
-    // Função para salvar o condicionante no Firestore
+    // --- SALVAR NO FIREBASE ---
     const salvarCondicionante = async () => {
         if (!id) {
-            console.log("ID não encontrado.");
+            Alert.alert("Erro", "ID do cliente não encontrado.");
             return;
         }
 
@@ -61,49 +88,66 @@ export default function AddCondicioante() {
         }
 
         try {
-            const condicionanteRef = collection(db, "usuarios", id, "condicionantes");
+            setLoading(true);
+            const condicionanteRef = collection(db, "usuarios", id as string, "condicionantes");
+            
             await addDoc(condicionanteRef, {
                 condicionante: conteudoAdd,
                 data: date
             });
 
-            console.log("Condicionante adicionado com sucesso!");
-            router.back();
+            // Mensagem de sucesso com redirecionamento no botão OK
+            Alert.alert(
+              "Sucesso", 
+              "Condicionante salva com sucesso!",
+              [{ text: "OK", onPress: () => router.back() }]
+            );
         } catch (error: any) {
             console.error("Erro ao salvar condicionante:", error.message);
-            Alert.alert("Erro", "Não foi possível salvar o condicionante.");
+            Alert.alert("Erro", "Não foi possível salvar a condicionante.");
+        } finally {
+            setLoading(false);
         }
     };
-    const DashboradContent = () => (
+
+    // --- CONTEÚDO DA TELA ---
+    const pageContent = (
         <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.cardContainer}>
+                <Text style={styles.sectionTitle}>Nova Condicionante</Text>
+
                 <View style={styles.formContainer}>
-                    
-                    {/* Campo de texto (TextArea) */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Condicionante <Text style={styles.required}>*</Text></Text>
-                        <TextInput
-                            style={styles.textArea}
-                            placeholder="Adicione a condicionante...."
-                            placeholderTextColor="#999"
-                            multiline={true}
-                            numberOfLines={10}
-                            textAlignVertical="top" // Importante para o texto começar em cima no Android
-                            value={conteudoAdd}
-                            onChangeText={setConteudoAdd}
-                        />
-                    </View>
+                    {/* Campo de texto */}
+                    <Text style={styles.label}>
+                        Condicionante <Text style={styles.required}>*</Text>
+                    </Text>
+                    <TextInput
+                        style={styles.textArea}
+                        placeholder="Adicione o texto da condicionante..."
+                        placeholderTextColor="#999"
+                        multiline={true}
+                        numberOfLines={10}
+                        textAlignVertical="top"
+                        value={conteudoAdd}
+                        onChangeText={setConteudoAdd}
+                    />
 
-                    {/* Seletor de data */}
-                    <View style={styles.dateContainer}>
-                        <Text style={styles.labelData}>Data até o vencimento:</Text>
-                        <View style={{ width: '100%' }}>
-                            <Botoes onPress={showDatePicker}>
-                                {date ? moment(date).format('DD/MM/YYYY') : "Selecionar data"}
-                            </Botoes>
-                        </View>
-                    </View>
+                    {/* Botão de Data */}
+                    <Text style={styles.label}>
+                        Data de vencimento <Text style={styles.required}>*</Text>
+                    </Text>
+                    <TouchableOpacity 
+                        style={styles.datePickerButton} 
+                        onPress={() => setShowPicker(true)}
+                    >
+                        <Feather name="calendar" size={20} color={COLORS.primary} style={{ marginRight: 10 }} />
+                        <Text style={styles.datePickerText}>
+                            {date ? moment(date).format('DD/MM/YYYY') : "Selecionar data"}
+                        </Text>
+                    </TouchableOpacity>
 
-                    {show && (
+                    {/* ATUALIZADO: Usando onValueChange e onDismiss no lugar de onChange */}
+                    {showPicker && (
                         <DateTimePicker
                             testID="datetimepicker"
                             value={moment(date).toDate()}
@@ -111,128 +155,134 @@ export default function AddCondicioante() {
                             minimumDate={new Date()}
                             is24Hour={true}
                             display="default"
-                            onChange={onChange}
+                            onValueChange={handleDateChange}
+                            onDismiss={handleDismiss}
                         />
                     )}
 
-                    {/* Botões de Ação */}
-                    <View style={styles.footerButtons}>
-                        <View style={styles.buttonWrapper}>
-                            <Botoes onPress={salvarCondicionante}>
-                                Salvar
-                            </Botoes>
-                        </View>
-                        
-                        <View style={styles.buttonWrapper}>
-                            <Botoes 
-                                onPress={() => router.back()} 
-                                bgColor="tomato" // Verifique se seu componente Botoes aceita essa prop, se não, use style
-                            >
-                                Cancelar
-                            </Botoes>
-                        </View>
+                    {/* Botões Salvar e Cancelar */}
+                    <View style={styles.actionRow}>
+                        <TouchableOpacity 
+                            style={[styles.btnAction, { borderColor: COLORS.textGray }]} 
+                            onPress={() => router.back()}
+                            disabled={loading}
+                        >
+                            <Text style={[styles.btnText, { color: COLORS.textGray }]}>Cancelar</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.btnAction, { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]} 
+                            onPress={salvarCondicionante}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator size="small" color={COLORS.white} />
+                            ) : (
+                                <>
+                                    <Feather name="save" size={16} color={COLORS.white} style={{ marginRight: 6 }} />
+                                    <Text style={[styles.btnText, { color: COLORS.white }]}>Salvar</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
                     </View>
 
                 </View>
-            </ScrollView>
+            </View>
+        </ScrollView>
     );
+
     return (
-        <SafeAreaView style={{flex: 3,}}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <HomeHeader
-            title="Inserir Condicionante"
-            onBackPress={() => router.back()}
+                title="Inserir Condicionante"
+                onBackPress={() => router.back()}
+                menuOptions={opcoesMenu}
             />
-
-        <ScreenContainer
-            bottomContent={<DashboradContent />}
-
-        />
-            
-
-
-        </SafeAreaView>    
+            <ScreenContainer bottomContent={pageContent} />
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff', // ou cor de fundo padrão
-    },
-    header: {
-        width: '100%',
-        height: 100, // Ajuste conforme necessário (equivalente ao height="20" do native-base + padding)
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 40 : 50,
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-        backgroundColor: TEMAS.colors.verde,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    headerLeft: {
-        flex: 1,
-        alignItems: 'flex-start',
-    },
-    headerCenter: {
-        flex: 5,
-        alignItems: 'center',
-    },
-    headerRight: {
-        flex: 1,
-        alignItems: 'flex-end',
-    },
-    headerTitle: {
-        color: TEMAS.colors.branco,
-        fontSize: 24, // Equivalente ao "2xl"
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
     scrollContent: {
-        flexGrow: 1,
+        padding: 20,
+        paddingBottom: 40,
+    },
+    cardContainer: {
+        backgroundColor: COLORS.white,
+        borderRadius: 12,
+        padding: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: COLORS.textDark,
+        marginBottom: 20,
+        textAlign: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        paddingBottom: 10,
     },
     formContainer: {
-        padding: 20,
-        flex: 1,
-    },
-    inputGroup: {
-        marginBottom: 20,
+        marginTop: 10,
     },
     label: {
-        fontSize: 16,
-        color: '#333',
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.textGray,
         marginBottom: 8,
-        fontWeight: '600',
     },
     required: {
-        color: 'red',
+        color: COLORS.red,
     },
     textArea: {
-        height: 200,
+        height: 150,
         borderWidth: 1,
-        borderColor: '#ccc', // Cor da borda padrão do input
-        borderRadius: 4,
+        borderColor: COLORS.border,
+        borderRadius: 8,
         padding: 12,
-        backgroundColor: '#fff',
         fontSize: 16,
+        color: COLORS.textDark,
+        backgroundColor: COLORS.background,
+        marginBottom: 20,
         textAlignVertical: 'top',
     },
-    dateContainer: {
-        width: '50%',
-        marginBottom: 20,
+    datePickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 8,
+        padding: 12,
+        backgroundColor: COLORS.background,
+        marginBottom: 30,
     },
-    labelData: {
-        color: TEMAS.colors.cinza,
+    datePickerText: {
         fontSize: 16,
-        marginTop: 6,
-        marginBottom: 4,
+        color: COLORS.textDark,
     },
-    footerButtons: {
+    actionRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 20,
+        marginTop: 10,
     },
-    buttonWrapper: {
-        width: '48%', // Para ficar lado a lado com espaço no meio
+    btnAction: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingVertical: 12,
+        marginHorizontal: 5,
+    },
+    btnText: {
+        fontSize: 14,
+        fontWeight: 'bold',
     }
 });
