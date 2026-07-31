@@ -1,8 +1,9 @@
 import React from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator, SafeAreaView
+  StyleSheet, ScrollView, ActivityIndicator
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { router } from "expo-router";

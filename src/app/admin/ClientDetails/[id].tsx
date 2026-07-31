@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from "react";
-import {   View,  Text,  StyleSheet,  ScrollView,  TouchableOpacity, Image,  Alert,  
-  RefreshControl,  ActivityIndicator,  Linking,  SafeAreaView,  Platform,  StatusBar} from "react-native";
+import {   
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert,  
+  RefreshControl, ActivityIndicator, Linking, Platform, StatusBar
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { db, storage } from "../../../config/firebase";
-import {  collection,  deleteDoc,  doc,  getDoc,  getDocs,  updateDoc,} from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import * as DocumentPicker from "expo-document-picker";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import moment from "moment";
 import HomeHeader from "../../../componentes/HomeHeader";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
 import { theme } from "../../../estilos/themes";
+// Importamos o LogOut para o botão de Sair
+import { UserCog, ShieldCheck, LogOut } from 'lucide-react-native';
 
 // --- CONFIGURAÇÃO DE CORES E ESTILOS GERAIS ---
 const COLORS = {
@@ -28,12 +33,45 @@ const PLACEHOLDER_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/thumb/
 
 export default function CadastroCliente() {
   const { id } = useLocalSearchParams();
-  const [usuario, setUsuario] = useState({});
-  const [condicionantes, setCondicionantes] = useState([]);
+  const [usuario, setUsuario] = useState<any>({});
+  const [condicionantes, setCondicionantes] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  
+  // Aqui você define as opções específicas desta página!
+  const opcoesDoCliente = [
+    { 
+      id: 1, 
+      label: 'Inicio', 
+      icon: <UserCog size={20} color="#333" />, 
+      onPress: () => {
+        console.log('Clicou no menu: Inicio');
+        router.push('admin/');
+      } 
+    },
+    { 
+      id: 2, 
+      label: 'Editar Cliente', 
+      icon: <ShieldCheck size={20} color="#333" />, 
+      onPress: () => {
+        console.log('Clicou no menu: Editar cliente');
+        router.push('/admin/editar');
+      }
+    },
+    { 
+      id: 3, 
+      label: 'Sair', 
+      icon: <LogOut size={20} color={COLORS.red} />, 
+      isDestructive: true, 
+      onPress: () => {
+        console.log('Clicou no menu: Sair');
+        Alert.alert("Sair", "Deseja realmente sair?", [
+            { text: "Cancelar", style: "cancel" },
+            { text: "Sair", style: "destructive", onPress: () => router.replace('/') }
+        ]);
+      } 
+    },
+  ];
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -43,7 +81,7 @@ export default function CadastroCliente() {
 
   const handleBuscarUsuario = async () => {
     try {
-      const snapshot = await getDoc(doc(db, "usuarios", id));
+      const snapshot = await getDoc(doc(db, "usuarios", id as string));
       if (snapshot.exists()) {
         setUsuario(snapshot.data());
       }
@@ -54,7 +92,7 @@ export default function CadastroCliente() {
 
   const handleBuscarCondicionantes = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "usuarios", id, "condicionantes"));
+      const snapshot = await getDocs(collection(db, "usuarios", id as string, "condicionantes"));
       if (!snapshot.empty) {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -88,8 +126,8 @@ export default function CadastroCliente() {
         await uploadBytes(refLicenca, blob);
         const url = await getDownloadURL(refLicenca);
         
-        await updateDoc(doc(db, "usuarios", id), { licenca: url });
-        setUsuario((prev) => ({ ...prev, licenca: url }));
+        await updateDoc(doc(db, "usuarios", id as string), { licenca: url });
+        setUsuario((prev: any) => ({ ...prev, licenca: url }));
         Alert.alert("Sucesso", "Licença enviada!");
       }
     } catch (error) {
@@ -100,25 +138,24 @@ export default function CadastroCliente() {
     }
   };
 
-  const handleDeletarCondicionante = (idItem: string) => {
-    Alert.alert("Excluir", "Deseja apagar esta condicionante?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Apagar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteDoc(doc(db, "usuarios", id, "condicionantes", idItem));
-            setCondicionantes((prev) => prev.filter((c) => c.id !== idItem));
-          } catch (e) {
-            Alert.alert("Erro", "Não foi possível apagar.");
-          }
-        },
-      },
-    ]);
+  useEffect(() => {
+    handleBuscarUsuario();
+    handleBuscarCondicionantes();
+  }, []);
+
+  const getStatusInfo = (dataString: any) => {
+    if (!dataString) return { color: COLORS.textGray, icon: "help-circle" };
+    
+    const dataPrazo = moment(dataString, "YYYY-MM-DD");
+    const hoje = moment();
+    const diasRestantes = dataPrazo.diff(hoje, "days");
+
+    if (dataPrazo.isBefore(hoje, 'day')) return { color: COLORS.red, icon: "alert-circle" };
+    if (diasRestantes <= 30) return { color: COLORS.orange, icon: "clock" };
+    return { color: COLORS.primary, icon: "check-circle" };
   };
 
-  const DashboardContent = () => (
+  const dashboardContent = (
     <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -127,7 +164,7 @@ export default function CadastroCliente() {
         <View style={styles.profileContainer}>
           <View style={styles.avatarWrapper}>
             <Image
-              source={{ uri: PLACEHOLDER_IMAGE }} // Troque por usuario?.fotoUrl se tiver
+              source={{ uri: PLACEHOLDER_IMAGE }} 
               style={styles.avatar}
             />
           </View>
@@ -135,7 +172,9 @@ export default function CadastroCliente() {
             {usuario?.empresa}
           </Text>
           <Text style={styles.contactName}>
-            {usuario?.nomeContato || (usuario?.email ? usuario.email.split('@')[0] : "Insira o nome do contato")}
+            <Text style={{fontWeight: 'bold', color: COLORS.textDark}}>Contato:</Text> {usuario?.nomeContato || (usuario?.email ? usuario.email.split('@')[0] : "Não informado")}
+            {"   |   "}
+            <Text style={{fontWeight: 'bold', color: COLORS.textDark}}>Tel:</Text> {usuario?.telefone || "Não informado"}
           </Text>
         </View>
 
@@ -145,7 +184,10 @@ export default function CadastroCliente() {
           
           <TouchableOpacity 
             style={styles.createButton}
-            onPress={() => router.push(`/../admin/addCondicionante?id=${id}`)}
+            onPress={() => {
+              console.log('Clicou no botão: Criar Nova (Condicionante)');
+              router.push(`/../admin/addCondicionante?id=${id}`);
+            }}
           >
             <Feather name="plus-square" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={styles.createButtonText}>Criar Nova</Text>
@@ -156,7 +198,7 @@ export default function CadastroCliente() {
         <View style={styles.listContainer}>
           {condicionantes.length > 0 ? (
             condicionantes
-              .sort((a, b) => moment(a.data).toDate() - moment(b.data).toDate())
+              .sort((a, b) => moment(a.data).toDate().getTime() - moment(b.data).toDate().getTime())
               .map((item, index) => {
                 const { color, icon } = getStatusInfo(item.data);
                 const isLast = index === condicionantes.length - 1;
@@ -165,11 +207,14 @@ export default function CadastroCliente() {
                   <TouchableOpacity
                     key={item.id || index}
                     style={[styles.listItem, !isLast && styles.separator]}
-                    onPress={() => handleDeletarCondicionante(item.id)}
+                    onPress={() => {
+                      console.log(`Abrindo detalhes da condicionante: ${item.id}`);
+                      router.push(`/admin/detalheCondicionante?clienteId=${id}&condicionanteId=${item.id}`);
+                    }}
                   >
                     {/* Ícone Esquerda */}
                     <View style={styles.iconWrapper}>
-                      <Feather name={icon} size={24} color={color} />
+                      <Feather name={icon as any} size={24} color={color} />
                     </View>
 
                     {/* Textos */}
@@ -198,7 +243,10 @@ export default function CadastroCliente() {
         <View style={styles.footerContainer}>
           <TouchableOpacity
             style={styles.largeButton}
-            onPress={inserirLicenca}
+            onPress={() => {
+              console.log('Clicou no botão: Adicionar Licença');
+              inserirLicenca();
+            }}
             disabled={isUploading}
           >
             {isUploading ? (
@@ -209,61 +257,47 @@ export default function CadastroCliente() {
           </TouchableOpacity>
           
           {usuario?.licenca && (
-             <TouchableOpacity style={{ marginTop: 12 }} onPress={() => Linking.openURL(usuario.licenca)}>
+             <TouchableOpacity style={{ marginTop: 12 }} onPress={() => {
+                console.log('Clicou no link: Ver licença atual');
+                Linking.openURL(usuario.licenca);
+             }}>
                 <Text style={{ color: COLORS.primary, textAlign: 'center', textDecorationLine: 'underline' }}>
                    Ver licença atual
                 </Text>
              </TouchableOpacity>
           )}
         </View>
-
       </ScrollView>
-
   );
 
-  useEffect(() => {
-    handleBuscarUsuario();
-    handleBuscarCondicionantes();
-  }, []);
-
-  // --- LÓGICA VISUAL ---
-  const getStatusInfo = (dataString: moment.MomentInput) => {
-    if (!dataString) return { color: COLORS.textGray, icon: "help-circle" };
-    
-    const dataPrazo = moment(dataString, "YYYY-MM-DD");
-    const hoje = moment();
-    const diasRestantes = dataPrazo.diff(hoje, "days");
-
-    if (dataPrazo.isBefore(hoje, 'day')) return { color: COLORS.red, icon: "alert-circle" };
-    if (diasRestantes <= 30) return { color: COLORS.orange, icon: "clock" };
-    return { color: COLORS.primary, icon: "check-circle" };
-  };
-
   return (
-    <SafeAreaView style={{ flex: 3 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
       <HomeHeader
         title="Detalhes do Cliente"
-        onBackPress={() => router.back()}
-        />
+        onBackPress={() => {
+          console.log('Clicou no Header: Voltar');
+          router.back();
+        }}
+        menuOptions={opcoesDoCliente} // Opções dinâmicas injetadas aqui
+      />
 
       <ScreenContainer
-        bottomContent={<DashboardContent />}
+        bottomContent={dashboardContent} // JSX passado diretamente
       />
-      
     </SafeAreaView>
   );
 }
 
+// ... [styles continuam exatamente iguais ao seu código original]
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    paddingTop: Platform.OS === 'android' ? 25 : 0, // Ajuste para Android
+    paddingTop: Platform.OS === 'android' ? 25 : 0, 
   },
   scrollContent: {
     paddingBottom: 40,
   },
-  // Perfil
   profileContainer: {
     alignItems: "center",
     paddingVertical: 24,
@@ -274,8 +308,8 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: 44,
     borderWidth: 2,
-    borderColor: COLORS.primary, // Borda verde ao redor da foto
-    padding: 3, // Espaço entre borda e foto
+    borderColor: COLORS.primary, 
+    padding: 3, 
     backgroundColor: COLORS.white,
     marginBottom: 12,
     justifyContent: 'center',
@@ -299,8 +333,7 @@ const styles = StyleSheet.create({
     color: COLORS.textGray,
     textAlign: "center",
   },
-  // Cabeçalho da Seção
-  sectionHeader: {
+   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -328,18 +361,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 12,
   },
-  // Lista
   listContainer: {
     backgroundColor: COLORS.white,
-    marginHorizontal: 16, // Margem lateral para parecer um "card" flutuante
+    marginHorizontal: 16, 
     borderRadius: 12,
-    // Sombra suave (Shadow)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
-    overflow: "hidden", // Garante que itens não passem da borda arredondada
+    overflow: "hidden", 
   },
   listItem: {
     flexDirection: "row",
@@ -350,7 +381,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6", // Linha divisória bem fina
+    borderBottomColor: "#F3F4F6", 
   },
   iconWrapper: {
     width: 32,
@@ -378,7 +409,6 @@ const styles = StyleSheet.create({
     color: COLORS.textGray,
     fontSize: 14,
   },
-  // Rodapé
   footerContainer: {
     marginTop: 24,
     paddingHorizontal: 20,

@@ -1,51 +1,59 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  SafeAreaView, 
-  Platform, 
-  StatusBar,
-  Modal,
-  TouchableWithoutFeedback
-} from 'react-native';
-// Usando lucide-react-native como você já instalou
-import { Menu, ChevronLeft, User, Settings, FileText, HelpCircle, LogOut } from 'lucide-react-native'; 
+import {
+  View,  Text,  TouchableOpacity,  StyleSheet,  Platform,
+  StatusBar,  Modal,  TouchableWithoutFeedback} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Menu, ChevronLeft, User, Settings, FileText, HelpCircle, LogOut } from 'lucide-react-native';
 import { theme } from '../estilos/themes';
+
+export interface MenuOptionsItem {
+  id: number;
+  label: string;
+  icon: React.ReactNode;
+  isDestructive?: boolean;
+  onPress?: () => void;
+}
 
 interface HomeHeaderProps {
   title?: string;
   onBackPress?: () => void;
-  // onMenuPress não precisa mais vir de fora, pois o menu abre internamente agora
+  menuOptions?: MenuOptionsItem[];
 }
 
-export default function HomeHeader({ title = "Página Inicial", onBackPress }: HomeHeaderProps) {
+const defaultMenuOptions: MenuOptionsItem[] = [
+  { id: 1, label: 'Meu Perfil', icon: <User size={20} color="#333" /> },
+  { id: 2, label: 'Configurações', icon: <Settings size={20} color="#333" /> },
+  { id: 3, label: 'Meus Pedidos', icon: <FileText size={20} color="#333" /> },
+  { id: 4, label: 'Ajuda', icon: <HelpCircle size={20} color="#333" /> },
+  { id: 5, label: 'Sair', icon: <LogOut size={20} color="#DC2626" />, isDestructive: true },
+];
+
+export default function HomeHeader({
+  title = "Página Inicial", 
+  onBackPress, 
+  menuOptions = defaultMenuOptions 
+}: HomeHeaderProps) {
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // Lista de opções do Menu (Aleatórias por enquanto)
-  const menuOptions = [
-    { id: 1, label: 'Meu Perfil', icon: <User size={20} color="#333" /> },
-    { id: 2, label: 'Configurações', icon: <Settings size={20} color="#333" /> },
-    { id: 3, label: 'Meus Pedidos', icon: <FileText size={20} color="#333" /> },
-    { id: 4, label: 'Ajuda', icon: <HelpCircle size={20} color="#333" /> },
-    { id: 5, label: 'Sair', icon: <LogOut size={20} color="#DC2626" />, isDestructive: true },
-  ];
-
-  // Função para lidar com o clique na opção (só fecha o menu e loga por enquanto)
-  const handleMenuOption = (label: string) => {
-    console.log(`Clicou em: ${label}`);
+  // Função para lidar com o clique na opção (agora corrigida a sintaxe "=")
+  const handleMenuOption = (item: MenuOptionsItem) => {
     setMenuVisible(false);
-    // Aqui você adicionaria: router.push('/caminho')
+    
+    // Se a opção tiver uma função própria (ex: router.push), ela executa aqui
+    if (item.onPress) {
+      item.onPress();
+    } else {
+      console.log(`Clicou em: ${item.label} (Sem ação definida)`);
+    }
   };
 
   return (
     <SafeAreaView>
       <View style={styles.container}>
-        
+
         {/* 1. ESQUERDA: Menu Sanduíche (Abre o Modal) */}
-        <TouchableOpacity 
-          onPress={() => setMenuVisible(true)} 
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
           style={styles.iconButton}
         >
           <Menu size={24} color="#FFFFFF" />
@@ -57,15 +65,13 @@ export default function HomeHeader({ title = "Página Inicial", onBackPress }: H
             {title}
           </Text>
         </View>
-        
+
         {/* 3. DIREITA: Botão de Voltar */}
-        {/* Se onBackPress existir, mostra o botão. Se não, mostra uma View vazia pra manter o título no centro */}
         {onBackPress ? (
-          <TouchableOpacity 
-            onPress={onBackPress} 
+          <TouchableOpacity
+            onPress={onBackPress}
             style={styles.iconButton}
           >
-            {/* Ícone apontando para esquerda, mas posicionado na direita da tela */}
             <ChevronLeft size={35} color="#FFFFFF" />
           </TouchableOpacity>
         ) : (
@@ -79,28 +85,26 @@ export default function HomeHeader({ title = "Página Inicial", onBackPress }: H
         visible={menuVisible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setMenuVisible(false)} // Para fechar no botão físico 'voltar' do Android
+        onRequestClose={() => setMenuVisible(false)} 
       >
-        {/* TouchableWithoutFeedback fecha o menu se clicar fora dele */}
         <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
           <View style={styles.modalOverlay}>
-            
-            {/* O Conteúdo do Menu (Caixinha Branca) */}
+
             <TouchableWithoutFeedback>
               <View style={styles.menuContent}>
                 {menuOptions.map((item, index) => (
-                  <TouchableOpacity 
-                    key={item.id} 
+                  <TouchableOpacity
+                    key={item.id}
                     style={[
-                      styles.menuItem, 
-                      index === menuOptions.length - 1 && styles.lastMenuItem // Tira a borda do último
+                      styles.menuItem,
+                      index === menuOptions.length - 1 && styles.lastMenuItem
                     ]}
-                    onPress={() => handleMenuOption(item.label)}
+                    onPress={() => handleMenuOption(item)}
                   >
                     {item.icon}
                     <Text style={[
-                      styles.menuText, 
-                      item.isDestructive && styles.destructiveText // Texto vermelho se for 'Sair'
+                      styles.menuText,
+                      item.isDestructive && styles.destructiveText
                     ]}>
                       {item.label}
                     </Text>
@@ -118,15 +122,14 @@ export default function HomeHeader({ title = "Página Inicial", onBackPress }: H
 }
 
 const styles = StyleSheet.create({
- 
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // Isso joga um pra esquerda e um pra direita
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: theme.colors.primary,
-    elevation: 4, 
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   titleContainer: {
-    flex: 1, // Ocupa todo o espaço sobrando no meio
+    flex: 1, 
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -150,18 +153,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  
-  // Estilos do Modal (Menu)
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)', // Fundo escuro transparente
-    justifyContent: 'flex-start', // Começa do topo
+    backgroundColor: 'rgba(0,0,0,0.3)', 
+    justifyContent: 'flex-start', 
   },
   menuContent: {
     backgroundColor: '#FFFFFF',
-    width: 250, // Largura do menu
-    marginTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 55 : 90, // Posição abaixo do header
-    marginLeft: 10, // Margem da esquerda
+    width: 250, 
+    marginTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 55 : 90, 
+    marginLeft: 10, 
     borderRadius: 8,
     elevation: 5,
     shadowColor: "#000",

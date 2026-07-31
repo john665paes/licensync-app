@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import React from "react";
-import { Touchable, TouchableOpacity } from "react-native"
+import { TouchableOpacity } from "react-native"
 import Svg, { Path, G} from 'react-native-svg';
 import { auth } from "../../config/firebase";
 

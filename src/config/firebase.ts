@@ -1,6 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { initializeAuth , getReactNativePersistence } from "firebase/auth";
-
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,15 +14,23 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_measurementId
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+let app;
+let auth: any;
 
-// Inicialização correta com persistência
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
+// Verifica se o app já foi inicializado (Evita o erro already-initialized no Fast Refresh)
+if (!getApps().length) {
+  // Se não existir, inicializa o app e o Auth com AsyncStorage
+  app = initializeApp(firebaseConfig);
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage)
+  });
+} else {
+  // Se já existir (porque você salvou o arquivo), ele só pega a instância que já está rodando
+  app = getApp();
+  auth = getAuth(app);
+}
 
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-export { auth, db, storage };
+export { app, auth, db, storage };

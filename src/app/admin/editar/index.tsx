@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { 
-    View, 
-    Text, 
-    ScrollView, 
-    StyleSheet, 
-    Image, 
-    ActivityIndicator, 
-    Platform, 
-    StatusBar,
-    SafeAreaView
+import {
+    View, Text, ScrollView, StyleSheet, Image, ActivityIndicator,
+    Platform, StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { router, useLocalSearchParams } from "expo-router";
@@ -116,7 +111,7 @@ export default function Editar() {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor={TEMAS.colors.verde} />
-            
+
             {/* --- HEADER --- */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
@@ -131,7 +126,7 @@ export default function Editar() {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                
+
                 {/* LOGO */}
                 <View style={styles.logoContainer}>
                     <Image source={Logo} style={styles.logo} resizeMode="contain" />
@@ -156,32 +151,32 @@ export default function Editar() {
                 >
                     {({ handleChange, handleBlur, handleSubmit, values, isSubmitting, errors, touched }) => (
                         <View style={styles.formContainer}>
-                            
-                            <InputTexto 
+
+                            <InputTexto
                                 label="Empresa:"
                                 onBlur={handleBlur('empresa')}
                                 onChangeText={handleChange('empresa')}
                                 placeholder="Nome da Empresa"
-                                value={values.empresa} 
+                                value={values.empresa}
                             />
                             {touched.empresa && errors.empresa && <Text style={styles.errorText}>{errors.empresa}</Text>}
 
-                            <InputTexto 
+                            <InputTexto
                                 label="CNPJ:"
                                 onBlur={handleBlur('cnpj')}
                                 onChangeText={handleChange('cnpj')}
                                 placeholder="CNPJ"
-                                value={values.cnpj} 
+                                value={values.cnpj}
                             />
                             {touched.cnpj && errors.cnpj && <Text style={styles.errorText}>{errors.cnpj}</Text>}
 
-                            <InputTexto 
+                            <InputTexto
                                 label="Email:"
                                 onBlur={handleBlur('email')}
                                 onChangeText={handleChange('email')}
                                 placeholder="E-mail"
                                 readOnly // Se o seu componente suportar, senão use editable={false}
-                                value={values.email} 
+                                value={values.email}
                             />
                             {touched.email && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
@@ -193,7 +188,7 @@ export default function Editar() {
                                         onBlur={handleBlur('telefone1')}
                                         onChangeText={handleChange('telefone1')}
                                         placeholder="(00) 0000-0000"
-                                        value={values.telefone1} 
+                                        value={values.telefone1}
                                     />
                                     {touched.telefone1 && errors.telefone1 && <Text style={styles.errorText}>{errors.telefone1}</Text>}
                                 </View>
@@ -204,26 +199,26 @@ export default function Editar() {
                                         onBlur={handleBlur('telefone2')}
                                         onChangeText={handleChange('telefone2')}
                                         placeholder="(Op.)"
-                                        value={values.telefone2} 
+                                        value={values.telefone2}
                                     />
                                 </View>
                             </View>
 
-                            <InputTexto 
+                            <InputTexto
                                 label="Cidade:"
                                 onBlur={handleBlur('cidade')}
                                 onChangeText={handleChange('cidade')}
                                 placeholder="Cidade"
-                                value={values.cidade} 
+                                value={values.cidade}
                             />
                             {touched.cidade && errors.cidade && <Text style={styles.errorText}>{errors.cidade}</Text>}
 
-                            <InputTexto 
+                            <InputTexto
                                 label="Endereço:"
                                 onBlur={handleBlur('endereco')}
                                 onChangeText={handleChange('endereco')}
                                 placeholder="Rua, Avenida..."
-                                value={values.endereco} 
+                                value={values.endereco}
                             />
                             {touched.endereco && errors.endereco && <Text style={styles.errorText}>{errors.endereco}</Text>}
 
@@ -235,7 +230,7 @@ export default function Editar() {
                                         onBlur={handleBlur('cep')}
                                         onChangeText={handleChange('cep')}
                                         placeholder="00000-000"
-                                        value={values.cep} 
+                                        value={values.cep}
                                     />
                                     {touched.cep && errors.cep && <Text style={styles.errorText}>{errors.cep}</Text>}
                                 </View>
@@ -246,18 +241,18 @@ export default function Editar() {
                                         onBlur={handleBlur('numero')}
                                         onChangeText={handleChange('numero')}
                                         placeholder="Nº"
-                                        value={values.numero} 
+                                        value={values.numero}
                                     />
                                     {touched.numero && errors.numero && <Text style={styles.errorText}>{errors.numero}</Text>}
                                 </View>
                             </View>
 
-                            <InputTexto 
+                            <InputTexto
                                 label="Complemento:"
                                 onBlur={handleBlur('complemento')}
                                 onChangeText={handleChange('complemento')}
                                 placeholder="Apto, Bloco..."
-                                value={values.complemento} 
+                                value={values.complemento}
                             />
 
                             {/* LINHA DUPLA: BAIRRO E UF */}
@@ -268,7 +263,7 @@ export default function Editar() {
                                         onBlur={handleBlur('bairro')}
                                         onChangeText={handleChange('bairro')}
                                         placeholder="Bairro"
-                                        value={values.bairro} 
+                                        value={values.bairro}
                                     />
                                     {touched.bairro && errors.bairro && <Text style={styles.errorText}>{errors.bairro}</Text>}
                                 </View>
@@ -279,7 +274,7 @@ export default function Editar() {
                                         onBlur={handleBlur('uf')}
                                         onChangeText={handleChange('uf')}
                                         placeholder="UF"
-                                        value={values.uf} 
+                                        value={values.uf}
                                     />
                                     {touched.uf && errors.uf && <Text style={styles.errorText}>{errors.uf}</Text>}
                                 </View>
@@ -289,9 +284,9 @@ export default function Editar() {
                                 <Botoes onPress={() => handleSubmit()} disabled={isSubmitting}>
                                     {isSubmitting ? 'Salvando...' : 'Salvar Edição'}
                                 </Botoes>
-                                
+
                                 <View style={{ height: 10 }} />
-                                
+
                                 <Botoes onPress={() => router.back()} bgColor={TEMAS.colors.cinza}>
                                     Cancelar
                                 </Botoes>
@@ -301,7 +296,7 @@ export default function Editar() {
                     )}
                 </Formik>
             </ScrollView>
-            
+
             {/* O Toast precisa ficar na raiz ou no layout principal, mas pode ficar aqui se não tiver outro lugar */}
             <Toast />
         </SafeAreaView>

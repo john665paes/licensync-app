@@ -1,4 +1,5 @@
-import { StatusBar, SafeAreaView,   StyleSheet } from 'react-native';
+import { StatusBar,   StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme} from '../estilos/themes';
 import { Stack } from 'expo-router';
 

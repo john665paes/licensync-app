@@ -1,15 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { 
-    View, 
-    Text, 
-    ScrollView, 
-    StyleSheet, 
-    TouchableOpacity, 
-    Linking, 
-    Platform, 
-    StatusBar,
-    SafeAreaView,
-    ActivityIndicator
+import {    View, Text, ScrollView, StyleSheet, TouchableOpacity,
+    Linking, Platform, StatusBar, SafeAreaView, ActivityIndicator
 } from "react-native";
 import { router } from "expo-router";
 import moment from "moment";
@@ -21,8 +12,8 @@ import { auth, db } from "../../config/firebase";
 
 // Componentes e Estilos
 import { TEMAS } from "../../estilos/temas";
-import { BotaoSair } from "../../componentes/botoes/exit";
-// Assumindo que BotaoSair já foi convertido. Se não, use um TouchableOpacity simples aqui temporariamente.
+import { theme } from "../../estilos/themes";
+import Homeheader from "../../../src/componentes/HomeHeader";
 
 // Componente simples de InputTexto apenas para visualização (Read Only)
 const ReadOnlyField = ({ label, value }: { label: string, value?: string }) => (
@@ -46,7 +37,7 @@ export default function IndexCliente() {
         const dataPrazo = moment(data, 'YYYY-MM-DD');
         const hoje = moment();
         const diasRestantes = dataPrazo.diff(hoje, 'days');
-        
+
         if (dataPrazo.isBefore(hoje)) return "#EF4444"; // Vermelho (Vencido)
         if (diasRestantes <= 30) return "#F59E0B"; // Laranja (Alerta)
         return "#10B981"; // Verde (No prazo)
@@ -97,92 +88,91 @@ export default function IndexCliente() {
             </View>
         );
     }
+    const DashboardContent = () => (
+        <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ padding: 20 }}
+        >
+            {/* --- DADOS DA EMPRESA --- */}
+            <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Dados Cadastrais</Text>
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor={TEMAS.colors.verde} />
+                <ReadOnlyField label="Empresa" value={usuario?.empresa} />
+                <ReadOnlyField label="CNPJ" value={usuario?.cnpj} />
+                <ReadOnlyField label="E-mail" value={usuario?.email} />
 
-            {/* --- HEADER --- */}
-            <View style={styles.header}>
-                <View style={{ width: 40 }} /> {/* Espaço vazio para equilibrar o layout */}
-                <Text style={styles.headerTitle}>LicenSync</Text>
-                <View style={styles.headerRight}>
-                    <BotaoSair />
+                <View style={styles.row}>
+                    <View style={styles.col}>
+                        <ReadOnlyField label="Telefone 1" value={usuario?.telefone1} />
+                    </View>
+                    <View style={styles.space} />
+                    <View style={styles.col}>
+                        <ReadOnlyField label="Telefone 2" value={usuario?.telefone2} />
+                    </View>
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                
-                {/* --- DADOS DA EMPRESA --- */}
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Dados Cadastrais</Text>
-                    
-                    <ReadOnlyField label="Empresa" value={usuario?.empresa} />
-                    <ReadOnlyField label="CNPJ" value={usuario?.cnpj} />
-                    <ReadOnlyField label="E-mail" value={usuario?.email} />
+            {/* --- LICENÇA --- */}
+            <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Licença Ambiental</Text>
+                {usuario?.licenca ? (
+                    <TouchableOpacity
+                        style={styles.downloadButton}
+                        onPress={() => Linking.openURL(usuario?.licenca)}
+                    >
+                        <Feather name="download" size={20} color="#fff" style={{ marginRight: 10 }} />
+                        <Text style={styles.downloadButtonText}>Baixar Licença (PDF)</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <Text style={styles.emptyText}>Nenhuma licença vinculada.</Text>
+                )}
+            </View>
 
-                    <View style={styles.row}>
-                        <View style={styles.col}>
-                            <ReadOnlyField label="Telefone 1" value={usuario?.telefone1} />
-                        </View>
-                        <View style={styles.space} />
-                        <View style={styles.col}>
-                            <ReadOnlyField label="Telefone 2" value={usuario?.telefone2} />
-                        </View>
-                    </View>
-                </View>
+            {/* --- CONDICIONANTES --- */}
+            <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Minhas Condicionantes</Text>
 
-                {/* --- LICENÇA --- */}
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Licença Ambiental</Text>
-                    {usuario?.licenca ? (
-                        <TouchableOpacity 
-                            style={styles.downloadButton}
-                            onPress={() => Linking.openURL(usuario?.licenca)}
-                        >
-                            <Feather name="download" size={20} color="#fff" style={{ marginRight: 10 }} />
-                            <Text style={styles.downloadButtonText}>Baixar Licença (PDF)</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <Text style={styles.emptyText}>Nenhuma licença vinculada.</Text>
-                    )}
-                </View>
+                {condicionantes.length > 0 ? (
+                    condicionantes
+                        .sort((a, b) => moment(a.data).toDate().getTime() - moment(b.data).toDate().getTime())
+                        .map((item, index) => (
+                            <View key={item.id} style={styles.condicionanteItem}>
 
-                {/* --- CONDICIONANTES --- */}
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Minhas Condicionantes</Text>
-                    
-                    {condicionantes.length > 0 ? (
-                        condicionantes
-                            .sort((a, b) => moment(a.data).toDate().getTime() - moment(b.data).toDate().getTime())
-                            .map((item, index) => (
-                                <View key={item.id} style={styles.condicionanteItem}>
-                                    
-                                    <TouchableOpacity 
-                                        style={styles.condicionanteButton}
-                                        onPress={() => router.push(`/cliente/checkCondicionante/${item.id}`)}
-                                    >
-                                        <Text style={styles.condicionanteText} numberOfLines={2}>
-                                            {item.condicionante || "Sem descrição"}
-                                        </Text>
-                                        <Feather name="chevron-right" size={20} color="#333" />
-                                    </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.condicionanteButton}
+                                    onPress={() => router.push(`/cliente/checkCondicionante/${item.id}`)}
+                                >
+                                    <Text style={styles.condicionanteText} numberOfLines={2}>
+                                        {item.condicionante || "Sem descrição"}
+                                    </Text>
+                                    <Feather name="chevron-right" size={20} color="#333" />
+                                </TouchableOpacity>
 
-                                    {item.data && (
-                                        <Text style={[styles.prazoText, { color: getPrazoColor(item.data) }]}>
-                                            Prazo: {moment(item.data).format("DD/MM/YYYY")}
-                                        </Text>
-                                    )}
+                                {item.data && (
+                                    <Text style={[styles.prazoText, { color: getPrazoColor(item.data) }]}>
+                                        Prazo: {moment(item.data).format("DD/MM/YYYY")}
+                                    </Text>
+                                )}
 
-                                    {index < condicionantes.length - 1 && <View style={styles.divider} />}
-                                </View>
-                            ))
-                    ) : (
-                        <Text style={styles.emptyText}>Nenhuma condicionante encontrada.</Text>
-                    )}
-                </View>
+                                {index < condicionantes.length - 1 && <View style={styles.divider} />}
+                            </View>
+                        ))
+                ) : (
+                    <Text style={styles.emptyText}>Nenhuma condicionante encontrada.</Text>
+                )}
+            </View>
+        </ScrollView>
+    );
+    return (
+        <SafeAreaView style={{ flex: 1 }}>
+            <StatusBar backgroundColor={theme.colors.background} />
+            <>
+            <Homeheader />
+            <DashboardContent />
 
-            </ScrollView>
+            </>
+
+
         </SafeAreaView>
     );
 }
