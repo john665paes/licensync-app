@@ -3,8 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, LogBox, ActivityIn
 // IMPORTANTE: Comentei o SVG porque sem a configuração avançada do Transformer, ele quebra o Android.
 // Use um .png com a tag <Image> padrão do React Native depois!
 // import Logo from "../../assets/imgs/login.svg"; 
-// import { signInWithEmailAndPassword } from "firebase/auth";
-// import { auth, db } from "../../config/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../../config/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { router } from "expo-router";
 import { Formik } from "formik";

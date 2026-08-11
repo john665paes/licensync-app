@@ -1,5 +1,9 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
+import { initializeAuth, getAuth } from "firebase/auth";
+
+// @ts-ignore: O Firebase omite essa tipagem em algumas versões, mas a função existe no pacote.
+import { getReactNativePersistence } from "firebase/auth";
+
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,11 +22,11 @@ const firebaseConfig = {
 let app;
 let auth: any;
 
-// Verifica se o app já foi inicializado (Evita crash no Expo Go)
+// Verifica se o app já foi inicializado (Evita crash no Fast Refresh)
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
   
-  // A MÁGICA: Decide como fazer o login dependendo de onde o app tá rodando
+  // Decide como fazer o login dependendo de onde o app tá rodando
   if (Platform.OS === 'web') {
     auth = getAuth(app); // Se for navegador, usa o padrão da web
   } else {
@@ -31,7 +35,7 @@ if (!getApps().length) {
     });
   }
 } else {
-  // Se já existir (porque salvou o arquivo), reaproveita a conexão
+  // Se já existir, reaproveita a conexão
   app = getApp();
   auth = getAuth(app);
 }
