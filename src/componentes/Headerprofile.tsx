@@ -3,9 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { theme } from '../estilos/themes';
 
-
-export default function UserProfileHeader({ userName, userImage, onImagePress }) {
-
+export default function UserProfileHeader({ userName, userImage, onImagePress, onLogoutPress }) {
 
   const getSaudacao = () => {
     const horaAtual = new Date().getHours();
@@ -16,12 +14,10 @@ export default function UserProfileHeader({ userName, userImage, onImagePress })
   const saudacao = getSaudacao();
 
   return (
-
     <View style={styles.header}>
       <View style={styles.contentContainer}>
-        {/* manter do laddo Esquerdo: Imagem e Texto */}
+        {/* Lado Esquerdo: Imagem e Texto */}
         <View style={styles.leftContent}>
-
           <TouchableOpacity onPress={onImagePress} activeOpacity={0.7}>
             {userImage ? (
               <Image
@@ -45,18 +41,14 @@ export default function UserProfileHeader({ userName, userImage, onImagePress })
           </View>
         </View>
 
-        {/* Lado Direito: Ícone de Notificação */}
-        {/* TouchableOpacity é o botão padrão para feedback visual em mobile */}
+        {/* Lado Direito: Botão de Sair */}
         <TouchableOpacity
-          style={styles.notificationButton}
-          // Adicione uma função onPress
-          onPress={() => console.log('Notificações pressionadas')}
-          activeOpacity={0.8}>
-
-          <Feather name="bell" size={24} color="#FFFFFF" />
-          <View style={styles.notificationDot}></View>
+          style={styles.logoutButton}
+          onPress={onLogoutPress}
+          activeOpacity={0.8}
+        >
+          <Feather name="log-out" size={24} color="#fdfdfd" />
         </TouchableOpacity>
-
       </View>
     </View>
   );
@@ -72,82 +64,52 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
-
   contentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between', 
   },
-
   leftContent: {
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 16, 
   },
-
   profileImage: {
-    width: 56, 
-    height: 56, 
-    borderRadius: 28,
-    borderWidth: 2, 
-    borderColor: '#FFFFFF', 
+    width: 56,
+    height: 56,
+    borderRadius: 28, 
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
-
   greetingText: {
     fontSize: 14, 
     color: '#D1FAE5', 
   },
-
   userName: {
     fontSize: 20, 
-    fontWeight: '600', // font-semibold
-    color: '#FFFFFF', // text-white (Herdado, mas garantido)
+    fontWeight: '600', 
+    color: '#FFFFFF', 
   },
-
-  // Equivalente a 'relative p-2 rounded-full hover:bg-emerald-500 focus...'
-  notificationButton: {
-    padding: 8, // p-2 (8px)
-    borderRadius: 16, // rounded-full (para um botão de 24+8+8 = 40px)
-    // No RN, não há 'hover' ou 'focus.
+  logoutButton: {
+    padding: 8, 
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Um fundo levemente transparente para destacar o botão
   },
-
-  notificationDot: {
-    position: 'absolute', // absolute
-    top: 2, // top-2 (8px, ajustado para posicionamento)
-    right: 2, // right-2 (8px, ajustado para posicionamento)
-    width: 10, // w-2.5 (10px)
-    height: 10, // h-2.5 (10px)
-    backgroundColor: '#EF4444', // bg-red-500
-    borderRadius: 5, // rounded-full (metade)
-    borderWidth: 2, // border-2
-    borderColor: '#059669', // border-emerald-600
-  },
-  profileImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 28, // Redondo
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-
-  
   profilePlaceholder: {
     width: 56,
     height: 56,
-    borderRadius: 28, // Redondo
-    backgroundColor: '#9CA3AF', // Um cinza médio (estilo placeholder padrão)
-    justifyContent: 'center', // Centraliza o boneco
+    borderRadius: 28, 
+    backgroundColor: '#9CA3AF', 
+    justifyContent: 'center', 
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
-  
-  // Aquele ícone pequeno de câmera no cantinho (opcional, mas ajuda o usuário a saber que pode clicar)
   editIconContainer: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: theme.colors.primary, // Ou uma cor escura
+    backgroundColor: theme.colors.primary, 
     borderRadius: 10,
     padding: 4,
     borderWidth: 1.5,
