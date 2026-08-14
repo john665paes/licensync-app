@@ -228,7 +228,7 @@ export default function CadastroCliente() {
                         {item.condicionante || "Sem título"}
                       </Text>
                       <Text style={styles.itemDate}>
-                        Prazo: {item.data ? moment(item.data).format("DD/MM/YYYY") : "--/--/----"}
+                        Prazo: {item.data ? moment(item.data, "YYYY-MM-DD").format("DD/MM/YYYY") : "--/--/----"}
                       </Text>
                     </View>
 
