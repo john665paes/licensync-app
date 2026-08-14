@@ -198,7 +198,12 @@ export default function CadastroCliente() {
         <View style={styles.listContainer}>
           {condicionantes.length > 0 ? (
             condicionantes
-              .sort((a, b) => moment(a.data).toDate().getTime() - moment(b.data).toDate().getTime())
+              .sort((a, b) => {
+                // Proteção com formato explícito pro Moment parar de reclamar
+                const timeA = a.data ? moment(a.data, "YYYY-MM-DD").valueOf() : 0;
+                const timeB = b.data ? moment(b.data, "YYYY-MM-DD").valueOf() : 0;
+                return timeA - timeB;
+              })
               .map((item, index) => {
                 const { color, icon } = getStatusInfo(item.data);
                 const isLast = index === condicionantes.length - 1;

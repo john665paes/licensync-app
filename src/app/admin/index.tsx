@@ -32,11 +32,11 @@ const StatusCard = ({ icon, color, title, subtitle, onPress }) => (
 const ClientItem = ({ data, onPress }) => (
     <TouchableOpacity style={styles.clientItem} onPress={onPress}>
         <View style={styles.clientIconBox}>
-            <Feather name="layout" size={24} color="#1A5A40" />
+            <Feather name="briefcase" size={24} color="#1A5A40" />
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.clientName}>{data.empresa || data.nome || "Sem Nome"}</Text>
-            <Text style={styles.clientDate}>Atualizado em {data.dataAtualizacao || "05/01/2025"}</Text>
+            <Text style={styles.clientDate}>Atualizado em {data.dataAtualizacao }</Text>
         </View>
         <Feather name="chevron-right" size={24} color="#6B7280" />
     </TouchableOpacity>
@@ -349,11 +349,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        marginBottom: 18,
+        borderWidth: 2,
+        borderColor: '#08a437',
     },
     searchInput: {
         flex: 1,
