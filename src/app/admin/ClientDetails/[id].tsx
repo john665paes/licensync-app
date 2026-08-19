@@ -7,10 +7,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { db, storage } from "../../../config/firebase";
-// --- ADICIONADO O deleteDoc NA IMPORTAÇÃO ---
 import { collection, doc, getDoc, getDocs, updateDoc, deleteDoc } from "firebase/firestore";
 import * as DocumentPicker from "expo-document-picker";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+// --- ADICIONADO deleteObject NA IMPORTAÇÃO DO STORAGE ---
+import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import moment from "moment";
 import HomeHeader from "../../../componentes/HomeHeader";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
@@ -38,10 +38,8 @@ export default function CadastroCliente() {
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // --- NOVA FUNÇÃO PARA APAGAR O CLIENTE E SUAS CONDICIONANTES ---
   const handleApagarCliente = async () => {
     try {
-      // 1. Primeiro, apagamos todas as condicionantes para não deixar lixo no banco
       const condicionantesRef = collection(db, "usuarios", id as string, "condicionantes");
       const snap = await getDocs(condicionantesRef);
       
@@ -50,11 +48,10 @@ export default function CadastroCliente() {
       );
       await Promise.all(deletePromises);
 
-      // 2. Depois, apagamos o documento principal do cliente
       await deleteDoc(doc(db, "usuarios", id as string));
 
       Alert.alert("Sucesso", "Cliente apagado permanentemente.");
-      router.replace('/admin'); // Volta para a tela inicial do admin
+      router.replace('/admin'); 
     } catch (error) {
       console.error("Erro ao apagar cliente:", error);
       Alert.alert("Erro", "Não foi possível apagar o cliente no momento.");
@@ -87,7 +84,7 @@ export default function CadastroCliente() {
             { 
               text: "Apagar", 
               style: "destructive", 
-              onPress: handleApagarCliente // Chama a nossa função nova aqui!
+              onPress: handleApagarCliente 
             }
         ]);
       } 
@@ -168,6 +165,38 @@ export default function CadastroCliente() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  // --- NOVA FUNÇÃO: APAGAR A LICENÇA ---
+  const handleApagarLicenca = () => {
+    Alert.alert(
+      "Apagar Licença",
+      "Tem certeza que deseja apagar a licença atual? O PDF será excluído permanentemente.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Apagar", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              // 1. Apaga do Firebase Storage
+              const licencaRef = ref(storage, usuario.licenca);
+              await deleteObject(licencaRef);
+
+              // 2. Remove do Firestore
+              await updateDoc(doc(db, "usuarios", id as string), { licenca: "" });
+
+              // 3. Atualiza a tela
+              setUsuario((prev: any) => ({ ...prev, licenca: "" }));
+              Alert.alert("Sucesso", "Licença removida com sucesso!");
+            } catch (error) {
+              console.error("Erro ao apagar licença:", error);
+              Alert.alert("Erro", "Não foi possível apagar a licença no momento.");
+            }
+          } 
+        }
+      ]
+    );
   };
 
   useFocusEffect(
@@ -306,17 +335,30 @@ export default function CadastroCliente() {
             )}
           </TouchableOpacity>
           
+          {/* --- NOVO LAYOUT: Card de Licença + Botão Apagar --- */}
           {usuario?.licenca && (
-             <TouchableOpacity style={styles.licenseCard} onPress={() => Linking.openURL(usuario.licenca)}>
-                <View style={styles.licenseCardIcon}>
-                    <Feather name="file-text" size={24} color={COLORS.primary} />
-                </View>
-                <View style={styles.licenseCardText}>
-                    <Text style={styles.licenseCardTitle}>Licença do Cliente</Text>
-                    <Text style={styles.licenseCardSubtitle}>Toque para abrir o PDF</Text>
-                </View>
-                <Feather name="external-link" size={20} color={COLORS.textGray} />
-             </TouchableOpacity>
+             <View style={styles.licenseRowContainer}>
+               <TouchableOpacity 
+                  style={[styles.licenseCard, { flex: 1, marginTop: 0 }]} 
+                  onPress={() => Linking.openURL(usuario.licenca)}
+               >
+                  <View style={styles.licenseCardIcon}>
+                      <Feather name="file-text" size={24} color={COLORS.primary} />
+                  </View>
+                  <View style={styles.licenseCardText}>
+                      <Text style={styles.licenseCardTitle}>Licença do Cliente</Text>
+                      <Text style={styles.licenseCardSubtitle}>Toque para abrir o PDF</Text>
+                  </View>
+                  <Feather name="external-link" size={20} color={COLORS.textGray} />
+               </TouchableOpacity>
+
+               <TouchableOpacity 
+                  style={styles.deleteLicenseBtn} 
+                  onPress={handleApagarLicenca}
+               >
+                 <Feather name="trash-2" size={24} color={COLORS.red} />
+               </TouchableOpacity>
+             </View>
           )}
         </View>
       </ScrollView>
@@ -362,9 +404,13 @@ const styles = StyleSheet.create({
   footerContainer: { marginTop: 24, paddingHorizontal: 20 },
   largeButton: { width: "100%", height: 50, borderRadius: 25, borderWidth: 1, borderColor: COLORS.primary, justifyContent: "center", alignItems: "center", backgroundColor: "transparent" },
   largeButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: "bold" },
-  licenseCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, padding: 16, borderRadius: 12, marginTop: 16, borderWidth: 1, borderColor: COLORS.border, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  
+  // --- NOVOS ESTILOS PARA ACOMODAR A LIXEIRA DA LICENÇA ---
+  licenseRowContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 16 },
+  licenseCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
   licenseCardIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#ECFDF5', justifyContent: 'center', alignItems: 'center' },
   licenseCardText: { flex: 1, marginLeft: 12 },
   licenseCardTitle: { fontSize: 16, fontWeight: '600', color: COLORS.textDark },
-  licenseCardSubtitle: { fontSize: 13, color: COLORS.textGray, marginTop: 2 }
+  licenseCardSubtitle: { fontSize: 13, color: COLORS.textGray, marginTop: 2 },
+  deleteLicenseBtn: { marginLeft: 12, backgroundColor: '#FEF2F2', width: 56, height: 56, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FEE2E2' }
 });
