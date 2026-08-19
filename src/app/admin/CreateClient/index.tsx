@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Homeheader from "../../../componentes/HomeHeader";
 import { auth, db, storage } from "../../../config/firebase";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
+import { UserCog } from "lucide-react-native";
 
 // Schema
 const CadastroSchema = Yup.object().shape({
@@ -40,7 +41,16 @@ export default function CreateClient() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 1. LÓGICA DE SELECIONAR IMAGEM (Corrigida a tela amarela)
+  // const opcoes = [
+  //   { 
+  //     id: 1, 
+  //     label: 'Inicio', 
+  //     icon: <UserCog size={20} color="#333" />, 
+  //     onPress: () => router.push('admin/')
+  //   },
+  // ]
+
+  //  selecionar imagme
   const pickImageFromGallery = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'], // <- Correção do Warning do Expo aqui
@@ -67,7 +77,7 @@ export default function CreateClient() {
     ]);
   };
 
-  // 3. LÓGICA DO VIA CEP
+  // busca do cep, 
   const buscarCEP = async (cep: string, setFieldValue: any) => {
     const cepLimpo = cep.replace(/\D/g, ''); 
     if (cepLimpo.length === 8) {
@@ -85,7 +95,7 @@ export default function CreateClient() {
     }
   };
 
-  // 4. LÓGICA DE SALVAR CLIENTE COM FOTO E SENHA LIMPA
+  // sanvando o cliente com foto e senha limpa do cnpj
   const salvarCliente = async (dados: any) => {
     setIsLoading(true);
     try {
@@ -96,9 +106,23 @@ export default function CreateClient() {
 
       let fotoPerfilUrl = "";
 
+      //  upload da foto se o usuário escolher  uma
       if (imageUri) {
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
+        
+        const blob: any = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = function () {
+            resolve(xhr.response);
+          };
+          xhr.onerror = function (e) {
+            console.log(e);
+            reject(new TypeError("Falha na requisição de rede"));
+          };
+          xhr.responseType = "blob";
+          xhr.open("GET", imageUri, true);
+          xhr.send(null);
+        });
+
         const filename = `perfil_clientes/${user.uid}.jpg`;
         const storageRef = ref(storage, filename);
         await uploadBytes(storageRef, blob);
@@ -307,15 +331,16 @@ export default function CreateClient() {
       <Homeheader 
         title="Cadastrar Cliente"
         onBackPress={() => router.back()}
+        // menuOptions={opcoes}
       />
       <ScreenContainer bottomContent={conteudoFormulario} /> 
     </SafeAreaView>
   );
 }
 
-// ------------------------------------------------------------------
-// COMPONENTE INTELIGENTE: Input normal ou Input com Máscara
-// ------------------------------------------------------------------
+
+// Input normal ou Input com Máscara
+
 const InputLabel = ({ label, error, style, mask, ...props }: any) => {
   return (
     <View style={styles.inputContainer}>

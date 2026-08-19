@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {   
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert,  
-  RefreshControl, ActivityIndicator, Linking, Platform, StatusBar
+  RefreshControl, ActivityIndicator, Linking, Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { db, storage } from "../../../config/firebase";
 import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import * as DocumentPicker from "expo-document-picker";
@@ -14,10 +14,8 @@ import moment from "moment";
 import HomeHeader from "../../../componentes/HomeHeader";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
 import { theme } from "../../../estilos/themes";
-// Importamos o LogOut para o botão de Sair
 import { UserCog, ShieldCheck, LogOut } from 'lucide-react-native';
 
-// --- CONFIGURAÇÃO DE CORES E ESTILOS GERAIS ---
 const COLORS = {
   primary: theme.colors.primary, 
   background: "#F9FAFB", 
@@ -37,25 +35,21 @@ export default function CadastroCliente() {
   const [condicionantes, setCondicionantes] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
-  // Aqui você define as opções específicas desta página!
   const opcoesDoCliente = [
     { 
       id: 1, 
       label: 'Inicio', 
       icon: <UserCog size={20} color="#333" />, 
-      onPress: () => {
-        console.log('Clicou no menu: Inicio');
-        router.push('admin/');
-      } 
+      onPress: () => router.push('admin/')
     },
     { 
       id: 2, 
       label: 'Editar Cliente', 
       icon: <ShieldCheck size={20} color="#333" />, 
       onPress: () => {
-        console.log('Clicou no menu: Editar cliente');
-        router.push('/admin/editar');
+        router.push(`/admin/editar?id=${id}`);
       }
     },
     { 
@@ -64,7 +58,6 @@ export default function CadastroCliente() {
       icon: <LogOut size={20} color={COLORS.red} />, 
       isDestructive: true, 
       onPress: () => {
-        console.log('Clicou no menu: Sair');
         Alert.alert("Sair", "Deseja realmente sair?", [
             { text: "Cancelar", style: "cancel" },
             { text: "Sair", style: "destructive", onPress: () => router.replace('/') }
@@ -120,8 +113,20 @@ export default function CadastroCliente() {
         const fileName = file.name || "licenca.pdf";
         const refLicenca = ref(storage, `arquivos/${id}/${Date.now()}_${fileName}`);
         
-        const response = await fetch(file.uri);
-        const blob = await response.blob();
+        // --- SOLUÇÃO DO BLOB NATIVO (Adeus Aviso e Corrupção) ---
+        const blob: any = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = function () {
+            resolve(xhr.response);
+          };
+          xhr.onerror = function (e) {
+            console.log(e);
+            reject(new TypeError("Falha na requisição de rede"));
+          };
+          xhr.responseType = "blob";
+          xhr.open("GET", file.uri, true);
+          xhr.send(null);
+        });
         
         await uploadBytes(refLicenca, blob);
         const url = await getDownloadURL(refLicenca);
@@ -138,10 +143,14 @@ export default function CadastroCliente() {
     }
   };
 
-  useEffect(() => {
-    handleBuscarUsuario();
-    handleBuscarCondicionantes();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      if (id) {
+        handleBuscarUsuario();
+        handleBuscarCondicionantes();
+      }
+    }, [id])
+  );
 
   const getStatusInfo = (dataString: any) => {
     if (!dataString) return { color: COLORS.textGray, icon: "help-circle" };
@@ -155,51 +164,74 @@ export default function CadastroCliente() {
     return { color: COLORS.primary, icon: "check-circle" };
   };
 
+ const handleContato = (telefone: string) => {
+    if (!telefone) return Alert.alert("Aviso", "Telefone não cadastrado.");
+    const numeroLimpo = telefone.replace(/\D/g, '');
+    
+    // O comando 'tel:' faz o Android/iOS abrir o discador nativo do sistema na hora!
+    Linking.openURL(`tel:${numeroLimpo}`).catch(() => {
+      Alert.alert("Erro", "Não foi possível abrir o aplicativo de telefone do celular.");
+    });
+  };
+
+ // COLE ISSO: Gera uma imagem linda com a inicial do cliente caso ele não tenha foto
+  const nomeEmpresa = usuario?.empresa || "Cliente";
+  const PLACEHOLDER_IMAGE = `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeEmpresa)}&background=10B981&color=fff&size=200`;
+  
+  const fotoParaExibir = usuario?.fotoPerfilCliente || usuario?.fotoPerfil;
+  // MÁGICA AQUI: Se tiver foto E não tiver dado erro, mostra a foto. Senão, mostra as iniciais.
+  const imagemFinalUri = (fotoParaExibir && fotoParaExibir !== "" && !imageError) ? fotoParaExibir : PLACEHOLDER_IMAGE;
   const dashboardContent = (
     <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* --- CABEÇALHO / PERFIL --- */}
         <View style={styles.profileContainer}>
-          <View style={styles.avatarWrapper}>
+         <View style={styles.avatarWrapper}>
             <Image
-              source={{ uri: PLACEHOLDER_IMAGE }} 
+              key={imagemFinalUri} 
+              source={{ uri: imagemFinalUri }} 
               style={styles.avatar}
+              onError={() => {
+                console.log("Falha ao baixar foto do Firebase, usando placeholder...");
+                setImageError(true);
+              }}
             />
           </View>
           <Text style={styles.companyName}>
             {usuario?.empresa}
           </Text>
-          <Text style={styles.contactName}>
-            <Text style={{fontWeight: 'bold', color: COLORS.textDark}}>Contato:</Text> {usuario?.nomeContato || (usuario?.email ? usuario.email.split('@')[0] : "Não informado")}
-            {"   |   "}
-            <Text style={{fontWeight: 'bold', color: COLORS.textDark}}>Tel:</Text> {usuario?.telefone || "Não informado"}
-          </Text>
+          
+          <View style={styles.contactInfoContainer}>
+            <Text style={styles.contactName}>
+              <Text style={{fontWeight: 'bold', color: COLORS.textDark}}>Contato:</Text> {usuario?.nomeContato || (usuario?.email ? usuario.email.split('@')[0] : "Não informado")}
+            </Text>
+            
+            <Text style={styles.contactSeparator}> | </Text>
+            
+            <TouchableOpacity onPress={() => handleContato(usuario?.telefone1)}>
+              <Text style={styles.contactPhone}>
+                <Text style={{fontWeight: 'bold', color: COLORS.textDark}}>Tel:</Text> <Text style={styles.linkText}>{usuario?.telefone1 || "Não informado"}</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* --- TÍTULO DA SEÇÃO E BOTÃO 'CRIAR NOVO' --- */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Condicionantes</Text>
-          
           <TouchableOpacity 
             style={styles.createButton}
-            onPress={() => {
-              console.log('Clicou no botão: Criar Nova (Condicionante)');
-              router.push(`/../admin/addCondicionante?id=${id}`);
-            }}
+            onPress={() => router.push(`/../admin/addCondicionante?id=${id}`)}
           >
             <Feather name="plus-square" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={styles.createButtonText}>Criar Nova</Text>
           </TouchableOpacity>
         </View>
 
-        {/* --- LISTA --- */}
         <View style={styles.listContainer}>
           {condicionantes.length > 0 ? (
             condicionantes
               .sort((a, b) => {
-                // Proteção com formato explícito pro Moment parar de reclamar
                 const timeA = a.data ? moment(a.data, "YYYY-MM-DD").valueOf() : 0;
                 const timeB = b.data ? moment(b.data, "YYYY-MM-DD").valueOf() : 0;
                 return timeA - timeB;
@@ -212,17 +244,11 @@ export default function CadastroCliente() {
                   <TouchableOpacity
                     key={item.id || index}
                     style={[styles.listItem, !isLast && styles.separator]}
-                    onPress={() => {
-                      console.log(`Abrindo detalhes da condicionante: ${item.id}`);
-                      router.push(`/admin/detalheCondicionante?clienteId=${id}&condicionanteId=${item.id}`);
-                    }}
+                    onPress={() => router.push(`/admin/detalheCondicionante?clienteId=${id}&condicionanteId=${item.id}`)}
                   >
-                    {/* Ícone Esquerda */}
                     <View style={styles.iconWrapper}>
                       <Feather name={icon as any} size={24} color={color} />
                     </View>
-
-                    {/* Textos */}
                     <View style={styles.textWrapper}>
                       <Text style={styles.itemTitle} numberOfLines={1}>
                         {item.condicionante || "Sem título"}
@@ -231,8 +257,6 @@ export default function CadastroCliente() {
                         Prazo: {item.data ? moment(item.data, "YYYY-MM-DD").format("DD/MM/YYYY") : "--/--/----"}
                       </Text>
                     </View>
-
-                    {/* Seta Direita */}
                     <Feather name="chevron-right" size={20} color={COLORS.textGray} />
                   </TouchableOpacity>
                 );
@@ -244,14 +268,10 @@ export default function CadastroCliente() {
           )}
         </View>
 
-        {/* --- BOTÃO GRANDE DE LICENÇA --- */}
         <View style={styles.footerContainer}>
           <TouchableOpacity
             style={styles.largeButton}
-            onPress={() => {
-              console.log('Clicou no botão: Adicionar Licença');
-              inserirLicenca();
-            }}
+            onPress={inserirLicenca}
             disabled={isUploading}
           >
             {isUploading ? (
@@ -262,13 +282,15 @@ export default function CadastroCliente() {
           </TouchableOpacity>
           
           {usuario?.licenca && (
-             <TouchableOpacity style={{ marginTop: 12 }} onPress={() => {
-                console.log('Clicou no link: Ver licença atual');
-                Linking.openURL(usuario.licenca);
-             }}>
-                <Text style={{ color: COLORS.primary, textAlign: 'center', textDecorationLine: 'underline' }}>
-                   Ver licença atual
-                </Text>
+             <TouchableOpacity style={styles.licenseCard} onPress={() => Linking.openURL(usuario.licenca)}>
+                <View style={styles.licenseCardIcon}>
+                    <Feather name="file-text" size={24} color={COLORS.primary} />
+                </View>
+                <View style={styles.licenseCardText}>
+                    <Text style={styles.licenseCardTitle}>Licença do Cliente</Text>
+                    <Text style={styles.licenseCardSubtitle}>Toque para abrir o PDF</Text>
+                </View>
+                <Feather name="external-link" size={20} color={COLORS.textGray} />
              </TouchableOpacity>
           )}
         </View>
@@ -279,158 +301,45 @@ export default function CadastroCliente() {
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
       <HomeHeader
         title="Detalhes do Cliente"
-        onBackPress={() => {
-          console.log('Clicou no Header: Voltar');
-          router.back();
-        }}
-        menuOptions={opcoesDoCliente} // Opções dinâmicas injetadas aqui
+        onBackPress={() => router.back()}
+        menuOptions={opcoesDoCliente} 
       />
-
-      <ScreenContainer
-        bottomContent={dashboardContent} // JSX passado diretamente
-      />
+      <ScreenContainer bottomContent={dashboardContent} />
     </SafeAreaView>
   );
 }
 
-// ... [styles continuam exatamente iguais ao seu código original]
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    paddingTop: Platform.OS === 'android' ? 25 : 0, 
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  profileContainer: {
-    alignItems: "center",
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-  },
-  avatarWrapper: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 2,
-    borderColor: COLORS.primary, 
-    padding: 3, 
-    backgroundColor: COLORS.white,
-    marginBottom: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 40,
-    resizeMode: 'contain',
-  },
-  companyName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textDark,
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  contactName: {
-    fontSize: 14,
-    color: COLORS.textGray,
-    textAlign: "center",
-  },
-   sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    marginTop: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#4B5563",
-  },
-  createButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: "transparent",
-  },
-  createButtonText: {
-    color: COLORS.primary,
-    fontWeight: "bold",
-    fontSize: 12,
-  },
-  listContainer: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16, 
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    overflow: "hidden", 
-  },
-  listItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: COLORS.white,
-  },
-  separator: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6", 
-  },
-  iconWrapper: {
-    width: 32,
-    alignItems: "center",
-    marginRight: 12,
-  },
-  textWrapper: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textDark,
-    marginBottom: 2,
-  },
-  itemDate: {
-    fontSize: 12,
-    color: COLORS.textGray,
-  },
-  emptyState: {
-    padding: 20,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: COLORS.textGray,
-    fontSize: 14,
-  },
-  footerContainer: {
-    marginTop: 24,
-    paddingHorizontal: 20,
-  },
-  largeButton: {
-    width: "100%",
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "transparent",
-  },
-  largeButtonText: {
-    color: COLORS.primary,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  container: { flex: 1, backgroundColor: COLORS.background, paddingTop: Platform.OS === 'android' ? 25 : 0 },
+  scrollContent: { paddingBottom: 40 },
+  profileContainer: { alignItems: "center", paddingVertical: 24, paddingHorizontal: 20 },
+  avatarWrapper: { width: 88, height: 88, borderRadius: 44, borderWidth: 2, borderColor: COLORS.primary, padding: 3, backgroundColor: COLORS.white, marginBottom: 12, justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: "100%", height: "100%", borderRadius: 40, resizeMode: 'cover' },
+  companyName: { fontSize: 18, fontWeight: "bold", color: COLORS.textDark, marginBottom: 4, textAlign: "center" },
+  contactInfoContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' },
+  contactName: { fontSize: 14, color: COLORS.textGray },
+  contactSeparator: { fontSize: 14, color: COLORS.textGray, marginHorizontal: 8 },
+  contactPhone: { fontSize: 14, color: COLORS.textGray },
+  linkText: { color: COLORS.primary, textDecorationLine: 'underline', fontWeight: '500' },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 12, marginTop: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: "600", color: "#4B5563" },
+  createButton: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: COLORS.primary, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: "transparent" },
+  createButtonText: { color: COLORS.primary, fontWeight: "bold", fontSize: 12 },
+  listContainer: { backgroundColor: COLORS.white, marginHorizontal: 16, borderRadius: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2, overflow: "hidden" },
+  listItem: { flexDirection: "row", alignItems: "center", paddingVertical: 16, paddingHorizontal: 16, backgroundColor: COLORS.white },
+  separator: { borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
+  iconWrapper: { width: 32, alignItems: "center", marginRight: 12 },
+  textWrapper: { flex: 1 },
+  itemTitle: { fontSize: 15, fontWeight: "600", color: COLORS.textDark, marginBottom: 2 },
+  itemDate: { fontSize: 12, color: COLORS.textGray },
+  emptyState: { padding: 20, alignItems: "center" },
+  emptyText: { color: COLORS.textGray, fontSize: 14 },
+  footerContainer: { marginTop: 24, paddingHorizontal: 20 },
+  largeButton: { width: "100%", height: 50, borderRadius: 25, borderWidth: 1, borderColor: COLORS.primary, justifyContent: "center", alignItems: "center", backgroundColor: "transparent" },
+  largeButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: "bold" },
+  licenseCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, padding: 16, borderRadius: 12, marginTop: 16, borderWidth: 1, borderColor: COLORS.border, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  licenseCardIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#ECFDF5', justifyContent: 'center', alignItems: 'center' },
+  licenseCardText: { flex: 1, marginLeft: 12 },
+  licenseCardTitle: { fontSize: 16, fontWeight: '600', color: COLORS.textDark },
+  licenseCardSubtitle: { fontSize: 13, color: COLORS.textGray, marginTop: 2 }
 });
