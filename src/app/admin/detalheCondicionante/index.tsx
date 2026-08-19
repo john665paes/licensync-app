@@ -9,6 +9,7 @@ import { db } from "../../../config/firebase";
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { Feather } from "@expo/vector-icons";
 import moment from "moment";
+import DateTimePicker from '@react-native-community/datetimepicker'; // <-- Importado o Picker
 import HomeHeader from "../../../componentes/HomeHeader";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
 import { theme } from "../../../estilos/themes";
@@ -34,7 +35,10 @@ export default function DetalhesCondicionante() {
   // Estados para edição
   const [isEditing, setIsEditing] = useState(false);
   const [textoEditado, setTextoEditado] = useState("");
-  const [dataEditada, setDataEditada] = useState(""); // Formato padrão AAAA-MM-DD para simplificar
+  const [dataEditada, setDataEditada] = useState(""); 
+  
+  // Estado do Calendário
+  const [showPicker, setShowPicker] = useState(false);
 
   // Opções do menu superior
   const opcoesMenu = [
@@ -84,9 +88,22 @@ export default function DetalhesCondicionante() {
     carregarCondicionante();
   }, []);
 
+  // --- Funções do Calendário ---
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') setShowPicker(false);
+    
+    if (selectedDate) {
+        setDataEditada(moment(selectedDate).format('YYYY-MM-DD'));
+    }
+  };
+
+  const handleDismiss = () => {
+      setShowPicker(false);
+  };
+
   const handleSalvarEdicao = async () => {
-    if (!textoEditado.trim()) {
-      Alert.alert("Aviso", "O texto da condicionante não pode ficar vazio.");
+    if (!textoEditado.trim() || !dataEditada) {
+      Alert.alert("Aviso", "Todos os campos precisam ser preenchidos.");
       return;
     }
 
@@ -102,7 +119,6 @@ export default function DetalhesCondicionante() {
       setCondicionante({ ...condicionante, condicionante: textoEditado, data: dataEditada });
       setIsEditing(false);
       
-      // --- ALTERAÇÃO AQUI: Adicionado a ação de voltar no botão "OK" do Alert ---
       Alert.alert(
         "Sucesso", 
         "Condicionante atualizada com sucesso!",
@@ -129,7 +145,7 @@ export default function DetalhesCondicionante() {
             const docRef = doc(db, "usuarios", clienteId as string, "condicionantes", condicionanteId as string);
             await deleteDoc(docRef);
             Alert.alert("Sucesso", "Condicionante apagada.");
-            router.back(); // Volta para a lista
+            router.back(); 
           } catch (error) {
             console.error(error);
             Alert.alert("Erro", "Não foi possível apagar.");
@@ -151,6 +167,7 @@ export default function DetalhesCondicionante() {
           {isEditing ? (
             /* MODO DE EDIÇÃO */
             <View style={styles.formContainer}>
+              
               <Text style={styles.label}>Texto da Condicionante:</Text>
               <TextInput
                 style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
@@ -159,18 +176,36 @@ export default function DetalhesCondicionante() {
                 multiline
               />
               
-              <Text style={styles.label}>Data de Vencimento (AAAA-MM-DD):</Text>
-              <TextInput
-                style={styles.input}
-                value={dataEditada}
-                onChangeText={setDataEditada}
-                placeholder="Ex: 2024-12-31"
-              />
+              <Text style={styles.label}>Data de Vencimento :</Text>
+              
+              {/* Botão para abrir o Calendário */}
+              <TouchableOpacity 
+                  style={styles.datePickerButton} 
+                  onPress={() => setShowPicker(true)}
+              >
+                  <Feather name="calendar" size={20} color={COLORS.primary} style={{ marginRight: 10 }} />
+                  <Text style={styles.datePickerText}>
+                      {dataEditada ? moment(dataEditada, "YYYY-MM-DD").format('DD/MM/YYYY') : "Selecionar data"}
+                  </Text>
+              </TouchableOpacity>
+
+              {/* Calendário Nativo */}
+              {showPicker && (
+                  <DateTimePicker
+                      testID="datetimepicker"
+                      // Se já houver data, abre nela. Se não, abre na data de hoje
+                      value={dataEditada ? moment(dataEditada, "YYYY-MM-DD").toDate() : new Date()}
+                      mode="date"
+                      display="default"
+                      onValueChange={handleDateChange}
+                      onDismiss={handleDismiss}
+                  />
+              )}
 
               <View style={styles.actionRow}>
                 <TouchableOpacity style={[styles.btnAction, { borderColor: COLORS.textGray }]} onPress={() => {
                   setIsEditing(false);
-                  setTextoEditado(condicionante?.condicionante || ""); // Reseta valor
+                  setTextoEditado(condicionante?.condicionante || ""); 
                   setDataEditada(condicionante?.data || "");
                 }}>
                   <Text style={[styles.btnText, { color: COLORS.textGray }]}>Cancelar</Text>
@@ -312,5 +347,19 @@ const styles = StyleSheet.create({
   btnText: {
     fontSize: 14,
     fontWeight: 'bold',
-  }
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: COLORS.background,
+    marginBottom: 20,
+  },
+  datePickerText: {
+    fontSize: 16,
+    color: COLORS.textDark,
+  },
 });
