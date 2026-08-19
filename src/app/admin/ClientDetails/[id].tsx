@@ -7,14 +7,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { db, storage } from "../../../config/firebase";
-import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
+// --- ADICIONADO O deleteDoc NA IMPORTAÇÃO ---
+import { collection, doc, getDoc, getDocs, updateDoc, deleteDoc } from "firebase/firestore";
 import * as DocumentPicker from "expo-document-picker";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import moment from "moment";
 import HomeHeader from "../../../componentes/HomeHeader";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
 import { theme } from "../../../estilos/themes";
-import { UserCog, ShieldCheck, LogOut } from 'lucide-react-native';
+import { UserCog, ShieldCheck, LogOut, TrashIcon, Trash2 } from 'lucide-react-native';
 
 const COLORS = {
   primary: theme.colors.primary, 
@@ -37,6 +38,29 @@ export default function CadastroCliente() {
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // --- NOVA FUNÇÃO PARA APAGAR O CLIENTE E SUAS CONDICIONANTES ---
+  const handleApagarCliente = async () => {
+    try {
+      // 1. Primeiro, apagamos todas as condicionantes para não deixar lixo no banco
+      const condicionantesRef = collection(db, "usuarios", id as string, "condicionantes");
+      const snap = await getDocs(condicionantesRef);
+      
+      const deletePromises = snap.docs.map(docItem => 
+        deleteDoc(doc(db, "usuarios", id as string, "condicionantes", docItem.id))
+      );
+      await Promise.all(deletePromises);
+
+      // 2. Depois, apagamos o documento principal do cliente
+      await deleteDoc(doc(db, "usuarios", id as string));
+
+      Alert.alert("Sucesso", "Cliente apagado permanentemente.");
+      router.replace('/admin'); // Volta para a tela inicial do admin
+    } catch (error) {
+      console.error("Erro ao apagar cliente:", error);
+      Alert.alert("Erro", "Não foi possível apagar o cliente no momento.");
+    }
+  };
+
   const opcoesDoCliente = [
     { 
       id: 1, 
@@ -54,13 +78,17 @@ export default function CadastroCliente() {
     },
     { 
       id: 3, 
-      label: 'Sair', 
-      icon: <LogOut size={20} color={COLORS.red} />, 
+      label: 'Apagar Cliente', 
+      icon: <Trash2 size={20} color={COLORS.red} />, 
       isDestructive: true, 
       onPress: () => {
-        Alert.alert("Sair", "Deseja realmente sair?", [
+        Alert.alert("Apagar Cliente", "Deseja realmente apagar este cliente? Esta ação não pode ser desfeita.", [
             { text: "Cancelar", style: "cancel" },
-            { text: "Sair", style: "destructive", onPress: () => router.replace('/') }
+            { 
+              text: "Apagar", 
+              style: "destructive", 
+              onPress: handleApagarCliente // Chama a nossa função nova aqui!
+            }
         ]);
       } 
     },
@@ -87,9 +115,9 @@ export default function CadastroCliente() {
     try {
       const snapshot = await getDocs(collection(db, "usuarios", id as string, "condicionantes"));
       if (!snapshot.empty) {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+        const data = snapshot.docs.map((docItem) => ({
+          id: docItem.id,
+          ...docItem.data(),
         }));
         setCondicionantes(data);
       } else {
@@ -113,7 +141,6 @@ export default function CadastroCliente() {
         const fileName = file.name || "licenca.pdf";
         const refLicenca = ref(storage, `arquivos/${id}/${Date.now()}_${fileName}`);
         
-        // --- SOLUÇÃO DO BLOB NATIVO (Adeus Aviso e Corrupção) ---
         const blob: any = await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.onload = function () {
@@ -164,23 +191,21 @@ export default function CadastroCliente() {
     return { color: COLORS.primary, icon: "check-circle" };
   };
 
- const handleContato = (telefone: string) => {
+  const handleContato = (telefone: string) => {
     if (!telefone) return Alert.alert("Aviso", "Telefone não cadastrado.");
     const numeroLimpo = telefone.replace(/\D/g, '');
     
-    // O comando 'tel:' faz o Android/iOS abrir o discador nativo do sistema na hora!
     Linking.openURL(`tel:${numeroLimpo}`).catch(() => {
       Alert.alert("Erro", "Não foi possível abrir o aplicativo de telefone do celular.");
     });
   };
 
- // COLE ISSO: Gera uma imagem linda com a inicial do cliente caso ele não tenha foto
   const nomeEmpresa = usuario?.empresa || "Cliente";
   const PLACEHOLDER_IMAGE = `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeEmpresa)}&background=10B981&color=fff&size=200`;
   
   const fotoParaExibir = usuario?.fotoPerfilCliente || usuario?.fotoPerfil;
-  // MÁGICA AQUI: Se tiver foto E não tiver dado erro, mostra a foto. Senão, mostra as iniciais.
   const imagemFinalUri = (fotoParaExibir && fotoParaExibir !== "" && !imageError) ? fotoParaExibir : PLACEHOLDER_IMAGE;
+  
   const dashboardContent = (
     <ScrollView
         contentContainerStyle={styles.scrollContent}
