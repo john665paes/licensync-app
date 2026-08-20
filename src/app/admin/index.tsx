@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput } from "react-native";
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -29,18 +29,34 @@ const StatusCard = ({ icon, color, title, subtitle, onPress }) => (
     </TouchableOpacity>
 );
 
-const ClientItem = ({ data, onPress }) => (
-    <TouchableOpacity style={styles.clientItem} onPress={onPress}>
-        <View style={styles.clientIconBox}>
-            <Feather name="briefcase" size={24} color="#1A5A40" />
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.clientName}>{data.empresa || data.nome || "Sem Nome"}</Text>
-            <Text style={styles.clientDate}>Atualizado em {data.dataAtualizacao }</Text>
-        </View>
-        <Feather name="chevron-right" size={24} color="#6B7280" />
-    </TouchableOpacity>
-);
+// --- COMPONENTE ClientItem ATUALIZADO ---
+const ClientItem = ({ data, onPress }) => {
+    // Tenta pegar a foto de perfil usando as duas nomenclaturas possíveis
+    const fotoUri = data.fotoPerfilCliente || data.fotoPerfil;
+
+    return (
+        <TouchableOpacity style={styles.clientItem} onPress={onPress}>
+            <View style={styles.clientIconBox}>
+                {fotoUri ? (
+                    <Image 
+                        source={{ uri: fotoUri }} 
+                        style={styles.clientImage} 
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <View style={styles.clientIconFallback}>
+                        <Feather name="briefcase" size={20} color="#1A5A40" />
+                    </View>
+                )}
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.clientName}>{data.empresa || data.nome || "Sem Nome"}</Text>
+                <Text style={styles.clientDate}>Atualizado em {data.dataAtualizacao || "Não informado"}</Text>
+            </View>
+            <Feather name="chevron-right" size={24} color="#6B7280" />
+        </TouchableOpacity>
+    );
+};
 
 export default function IndexADM() {
     const [nomeUsuario, setNomeUsuario] = useState('');
@@ -52,7 +68,6 @@ export default function IndexADM() {
     const [countAprovados, setCountAprovados] = useState(0);
     const [searchText, setSearchText] = useState('');
 
-    // AQUI ESTÁ A MÁGICA: useFocusEffect no lugar do useEffect
     useFocusEffect(
         useCallback(() => {
             const fetchDados = async () => {
@@ -122,15 +137,28 @@ export default function IndexADM() {
             };
             
             fetchDados();
-        }, []) // O array vazio aqui dentro do useCallback garante que a função não seja recriada à toa
+        }, []) 
     );
 
     const uploadImageToFirebase = async (uriLocal) => {
         if (!uriLocal) return;
         setLoading(true);
         try {
-            const response = await fetch(uriLocal);
-            const blob = await response.blob();
+            // --- BLOB CORRIGIDO PARA EVITAR CORRUPÇÃO DA FOTO DO ADMIN TAMBÉM ---
+            const blob: any = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.onload = function () {
+                  resolve(xhr.response);
+                };
+                xhr.onerror = function (e) {
+                  console.log(e);
+                  reject(new TypeError("Falha na requisição de rede"));
+                };
+                xhr.responseType = "blob";
+                xhr.open("GET", uriLocal, true);
+                xhr.send(null);
+            });
+
             const filename = `perfil/${auth.currentUser.uid}.jpg`;
             const storageRef = ref(storage, filename);
             await uploadBytes(storageRef, blob);
@@ -149,7 +177,7 @@ export default function IndexADM() {
 
     const pickImageFromGallery = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true, aspect: [1, 1], quality: 0.5,
         });
         if (!result.canceled) {
@@ -162,6 +190,7 @@ export default function IndexADM() {
         const res = await ImagePicker.requestCameraPermissionsAsync();
         if (!res.granted) return Alert.alert("Ops", "Precisamos da câmera!");
         const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
             allowsEditing: true, aspect: [1, 1], quality: 0.5,
         });
         if (!result.canceled) {
@@ -340,6 +369,26 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#F3F4F6',
+    },
+    clientIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    clientImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+    },
+    clientIconFallback: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#ECFDF5', 
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     clientName: { fontSize: 16, fontWeight: '600', color: '#374151' },
     clientDate: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
