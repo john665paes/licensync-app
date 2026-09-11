@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import { Feather } from "@expo/vector-icons";
 
@@ -75,7 +75,7 @@ export default function AddCondicionante() {
     ];
 
     // --- MANIPULAÇÃO DO CALENDÁRIO ---
-    const handleDateChange = (event: any, selectedDate?: Date) => {
+    const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
         if (Platform.OS === 'android') setShowPicker(false);
         
         if (selectedDate) {
@@ -195,7 +195,7 @@ export default function AddCondicionante() {
                                     minimumDate={new Date()}
                                     is24Hour={true}
                                     display="default"
-                                    onChange={handleDateChange}
+                                    onValueChange={handleDateChange}
                                 />
                             )}
                         </>
