@@ -368,7 +368,7 @@ export default function CadastroCliente() {
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
       <HomeHeader
         title="Detalhes do Cliente"
-        onBackPress={() => router.back()}
+        onBackPress={() => {if (router.canGoBack()) router.back(); else router.replace('/admin');}}
         menuOptions={opcoesDoCliente} 
       />
       <ScreenContainer bottomContent={dashboardContent} />

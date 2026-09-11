@@ -137,7 +137,7 @@ export default function CreateClient() {
       });
 
       Toast.show({ type: 'success', text1: 'Cliente Cadastrado com Sucesso!' });
-      router.back();
+      if (router.canGoBack()) router.back(); else router.replace('/admin');;
 
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Erro ao cadastrar cliente' });
@@ -305,7 +305,7 @@ export default function CreateClient() {
             />
 
             <View style={styles.footerButtons}>
-              <TouchableOpacity style={styles.btnCancel} onPress={() => router.back()} disabled={isLoading}>
+              <TouchableOpacity style={styles.btnCancel} onPress={() => {if (router.canGoBack()) router.back(); else router.replace('/admin');}} disabled={isLoading}>
                 <Text style={styles.txtCancel}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity 
@@ -330,7 +330,7 @@ export default function CreateClient() {
     <SafeAreaView style={{ flex: 1 }}>
       <Homeheader 
         title="Cadastrar Cliente"
-        onBackPress={() => router.back()}
+        onBackPress={() => {if (router.canGoBack()) router.back(); else router.replace('/admin');}}
         // menuOptions={opcoes}
       />
       <ScreenContainer bottomContent={conteudoFormulario} /> 

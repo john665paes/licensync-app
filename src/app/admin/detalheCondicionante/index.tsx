@@ -74,7 +74,7 @@ export default function DetalhesCondicionante() {
         setDataEditada(data.data || "");
       } else {
         Alert.alert("Erro", "Condicionante não encontrada.");
-        router.back();
+        if (router.canGoBack()) router.back(); else router.replace('/admin');
       }
     } catch (error) {
       console.error(error);
@@ -122,7 +122,7 @@ export default function DetalhesCondicionante() {
       Alert.alert(
         "Sucesso", 
         "Condicionante atualizada com sucesso!",
-        [{ text: "OK", onPress: () => router.back() }]
+        [{ text: "OK", onPress: () => {if (router.canGoBack()) router.back(); else router.replace('/admin');} }]
       );
       
     } catch (error) {
@@ -145,7 +145,7 @@ export default function DetalhesCondicionante() {
             const docRef = doc(db, "usuarios", clienteId as string, "condicionantes", condicionanteId as string);
             await deleteDoc(docRef);
             Alert.alert("Sucesso", "Condicionante apagada.");
-            router.back(); 
+            if (router.canGoBack()) router.back(); else router.replace('/admin'); 
           } catch (error) {
             console.error(error);
             Alert.alert("Erro", "Não foi possível apagar.");
@@ -254,7 +254,7 @@ export default function DetalhesCondicionante() {
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
       <HomeHeader
         title="Condicionante"
-        onBackPress={() => router.back()}
+        onBackPress={() => {if (router.canGoBack()) router.back(); else router.replace('/admin');}}
         menuOptions={opcoesMenu} 
       />
       <ScreenContainer bottomContent={pageContent} />

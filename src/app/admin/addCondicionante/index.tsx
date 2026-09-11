@@ -38,6 +38,20 @@ export default function AddCondicionante() {
     const [conteudoAdd, setConteudoAdd] = useState('');
     const [loading, setLoading] = useState(false);
 
+   
+    const safeGoBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            
+            if (id) {
+                router.replace(`/admin/ClientDetails/${id}`);
+            } else {
+                router.replace('/admin');
+            }
+        }
+    };
+
     // --- MENU SUPERIOR ---
     const opcoesMenu = [
         { 
@@ -60,8 +74,7 @@ export default function AddCondicionante() {
         },
     ];
 
-    // --- MANIPULAÇÃO DO CALENDÁRIO (ATUALIZADO) ---
-    // Função chamada quando uma data é confirmada
+    // --- MANIPULAÇÃO DO CALENDÁRIO ---
     const handleDateChange = (event: any, selectedDate?: Date) => {
         if (Platform.OS === 'android') setShowPicker(false);
         
@@ -70,7 +83,6 @@ export default function AddCondicionante() {
         }
     };
 
-    // Função chamada quando o usuário clica fora ou cancela (Fecha o picker)
     const handleDismiss = () => {
         setShowPicker(false);
     };
@@ -93,15 +105,21 @@ export default function AddCondicionante() {
             
             await addDoc(condicionanteRef, {
                 condicionante: conteudoAdd,
-                data: date
+                data: date,
+                visualizada: false 
             });
 
-            // Mensagem de sucesso com redirecionamento no botão OK
-            Alert.alert(
-              "Sucesso", 
-              "Condicionante salva com sucesso!",
-              [{ text: "OK", onPress: () => router.back() }]
-            );
+            // Usando a navegação segura no sucesso da Web
+            if (Platform.OS === 'web') {
+                window.alert("Condicionante salva com sucesso!");
+                safeGoBack();
+            } else {
+                Alert.alert(
+                  "Sucesso", 
+                  "Condicionante salva com sucesso!",
+                  [{ text: "OK", onPress: safeGoBack }] // Aplicado aqui!
+                );
+            }
         } catch (error: any) {
             console.error("Erro ao salvar condicionante:", error.message);
             Alert.alert("Erro", "Não foi possível salvar a condicionante.");
@@ -136,35 +154,59 @@ export default function AddCondicionante() {
                     <Text style={styles.label}>
                         Data de vencimento <Text style={styles.required}>*</Text>
                     </Text>
-                    <TouchableOpacity 
-                        style={styles.datePickerButton} 
-                        onPress={() => setShowPicker(true)}
-                    >
-                        <Feather name="calendar" size={20} color={COLORS.primary} style={{ marginRight: 10 }} />
-                        <Text style={styles.datePickerText}>
-                            {date ? moment(date).format('DD/MM/YYYY') : "Selecionar data"}
-                        </Text>
-                    </TouchableOpacity>
 
-                    {/* ATUALIZADO: Usando onValueChange e onDismiss no lugar de onChange */}
-                    {showPicker && (
-                        <DateTimePicker
-                            testID="datetimepicker"
-                            value={moment(date).toDate()}
-                            mode="date"
-                            minimumDate={new Date()}
-                            is24Hour={true}
-                            display="default"
-                            onValueChange={handleDateChange}
-                            onDismiss={handleDismiss}
+                    {/* --- A MÁGICA CROSS-PLATFORM (WEB VS CELULAR) ACONTECE AQUI --- */}
+                    {Platform.OS === 'web' ? (
+                        // @ts-ignore
+                        <input 
+                            type="date"
+                            value={date}
+                            onChange={(e: any) => setDate(e.target.value)}
+                            style={{
+                                padding: '12px',
+                                borderRadius: '8px',
+                                border: '1px solid #E5E7EB',
+                                outline: 'none',
+                                marginBottom: '30px',
+                                fontSize: '16px',
+                                color: COLORS.textDark,
+                                backgroundColor: COLORS.background,
+                                width: '100%',
+                                boxSizing: 'border-box'
+                            }}
                         />
+                    ) : (
+                        <>
+                            <TouchableOpacity 
+                                style={styles.datePickerButton} 
+                                onPress={() => setShowPicker(true)}
+                            >
+                                <Feather name="calendar" size={20} color={COLORS.primary} style={{ marginRight: 10 }} />
+                                <Text style={styles.datePickerText}>
+                                    {date ? moment(date).format('DD/MM/YYYY') : "Selecionar data"}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {showPicker && (
+                                <DateTimePicker
+                                    testID="datetimepicker"
+                                    value={moment(date).toDate()}
+                                    mode="date"
+                                    minimumDate={new Date()}
+                                    is24Hour={true}
+                                    display="default"
+                                    onChange={handleDateChange}
+                                />
+                            )}
+                        </>
                     )}
+                    {/* ----------------------------------------------------------- */}
 
                     {/* Botões Salvar e Cancelar */}
                     <View style={styles.actionRow}>
                         <TouchableOpacity 
                             style={[styles.btnAction, { borderColor: COLORS.textGray }]} 
-                            onPress={() => router.back()}
+                            onPress={safeGoBack} // Aplicado aqui!
                             disabled={loading}
                         >
                             <Text style={[styles.btnText, { color: COLORS.textGray }]}>Cancelar</Text>
@@ -195,7 +237,7 @@ export default function AddCondicionante() {
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <HomeHeader
                 title="Inserir Condicionante"
-                onBackPress={() => router.back()}
+                onBackPress={safeGoBack} // Aplicado aqui!
                 menuOptions={opcoesMenu}
             />
             <ScreenContainer bottomContent={pageContent} />
@@ -212,77 +254,20 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderRadius: 12,
         padding: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 3,
+        ...Platform.select({
+            ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
+            android: { elevation: 3 },
+            web: { boxShadow: '0px 1px 3px rgba(0,0,0,0.1)' }
+        })
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: COLORS.textDark,
-        marginBottom: 20,
-        textAlign: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-        paddingBottom: 10,
-    },
-    formContainer: {
-        marginTop: 10,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: COLORS.textGray,
-        marginBottom: 8,
-    },
-    required: {
-        color: COLORS.red,
-    },
-    textArea: {
-        height: 150,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        color: COLORS.textDark,
-        backgroundColor: COLORS.background,
-        marginBottom: 20,
-        textAlignVertical: 'top',
-    },
-    datePickerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: 8,
-        padding: 12,
-        backgroundColor: COLORS.background,
-        marginBottom: 30,
-    },
-    datePickerText: {
-        fontSize: 16,
-        color: COLORS.textDark,
-    },
-    actionRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 10,
-    },
-    btnAction: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingVertical: 12,
-        marginHorizontal: 5,
-    },
-    btnText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-    }
+    sectionTitle: { fontSize: 18, fontWeight: "bold", color: COLORS.textDark, marginBottom: 20, textAlign: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 },
+    formContainer: { marginTop: 10 },
+    label: { fontSize: 14, fontWeight: "600", color: COLORS.textGray, marginBottom: 8 },
+    required: { color: COLORS.red },
+    textArea: { height: 150, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, padding: 12, fontSize: 16, color: COLORS.textDark, backgroundColor: COLORS.background, marginBottom: 20, textAlignVertical: 'top' },
+    datePickerButton: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, padding: 12, backgroundColor: COLORS.background, marginBottom: 30 },
+    datePickerText: { fontSize: 16, color: COLORS.textDark },
+    actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+    btnAction: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingVertical: 12, marginHorizontal: 5 },
+    btnText: { fontSize: 14, fontWeight: 'bold' }
 });

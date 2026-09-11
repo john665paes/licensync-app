@@ -18,7 +18,7 @@ export function BotaoVoltar({ color = TEMAS.colors.branco, onPress }: BotaoVolta
             if (router.canGoBack()) {
                 router.back();
             } else {
-                // Fallback caso não tenha histórico (ex: recarregar a pag direto)
+               
                 router.replace('/'); 
             }
         }

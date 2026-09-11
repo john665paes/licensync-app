@@ -91,7 +91,7 @@ export default function EditClient() {
           }
         } else {
           Alert.alert("Erro", "Cliente não encontrado.");
-          router.back();
+          if (router.canGoBack()) router.back(); else router.replace('/admin');
         }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -184,7 +184,7 @@ export default function EditClient() {
       });
 
       Toast.show({ type: 'success', text1: 'Cliente Atualizado com Sucesso!' });
-      setTimeout(() => router.back(), 1000);
+      setTimeout(() => {if (router.canGoBack()) router.back(); else router.replace('/admin');}, 1000);
 
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Erro ao atualizar cliente' });
@@ -358,7 +358,9 @@ export default function EditClient() {
             />
 
             <View style={styles.footerButtons}>
-              <TouchableOpacity style={styles.btnCancel} onPress={() => router.back()} disabled={isLoading}>
+              <TouchableOpacity style={styles.btnCancel} onPress={() => {
+                if (router.canGoBack()) router.back(); else router.replace('/admin'); 
+              }} disabled={isLoading}>
                 <Text style={styles.txtCancel}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity 
@@ -383,7 +385,7 @@ export default function EditClient() {
     <SafeAreaView style={{ flex: 1 }}>
       <Homeheader 
         title="Editar Cliente"
-        onBackPress={() => router.back()}
+        onBackPress={() => {if (router.canGoBack()) router.back(); else router.replace('/admin');}}
         menuOptions={opcoesMenu}
       />
       <ScreenContainer bottomContent={conteudoFormulario} /> 
