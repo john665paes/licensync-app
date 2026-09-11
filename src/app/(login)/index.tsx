@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, LogBox, ActivityIndicator, StatusBar, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, LogBox, ActivityIndicator, StatusBar, Alert, Image } from "react-native";
 // IMPORTANTE: Comentei o SVG porque sem a configuração avançada do Transformer, ele quebra o Android.
 // Use um .png com a tag <Image> padrão do React Native depois!
-// import Logo from "../../assets/imgs/login.svg"; 
+import Logo from "../../assets/imgs/login.png"; 
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../../config/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -68,11 +68,9 @@ export default function Login() {
             {/* PARTE SUPERIOR BRANCA */}
             <View style={styles.topContainer}>
               {/* Espaço reservado para a Logo (usar PNG) */}
-              <View style={{ width: 150, height: 150, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderRadius: 20 }}>
-                <Text style={{ color: '#aaa', fontWeight: 'bold' }}>Sua Logo Aqui</Text>
-              </View>
               
-              <Text style={styles.subtitle}>Gestão de Condicionantes Ambientais</Text>
+              <Image source={Logo} style={{ width: 350, height: 350, resizeMode: 'contain', marginBottom: -80 }} />
+              {/* <Text style={styles.subtitle}>Gestão de Condicionantes Ambientais</Text> */}
             </View>
 
             {/* PARTE INFERIOR CINZA */}
