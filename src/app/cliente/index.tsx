@@ -60,7 +60,7 @@ export default function IndexCliente() {
     const [countSeguras, setCountSeguras] = useState(0);     // Amarelas
     const [countCumpridas, setCountCumpridas] = useState(0); // Verdes
 
-    // --- NOVA LÓGICA DE STATUS COM PRIORIDADE ---
+    // STATUS COM PRIORIDADE
     const getStatusInfo = (item: any) => {
         // 1. Verde (Cumpridas) - Prioridade 3 (Ficam por último)
         if (item.status === 'cumprida') {
