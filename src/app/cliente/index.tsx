@@ -19,15 +19,15 @@ import HomeHeader from "../../componentes/Headercliente";
 import { ScreenContainer } from "../../componentes/ScreenContainerpags";
 
 const COLORS = {
-  primary: theme.colors.primary, 
-  background: "#F9FAFB", 
-  white: "#FFFFFF",
-  textDark: "#1F2937",
-  textGray: "#6B7280",
-  border: "#E5E7EB",
-  red: "#EF4444",
-  orange: "#F59E0B",
-  green: "#10B981"
+    primary: theme.colors.primary, 
+    background: "#F9FAFB", 
+    white: "#FFFFFF",
+    textDark: "#1F2937",
+    textGray: "#6B7280",
+    border: "#E5E7EB",
+    red: "#EF4444",
+    orange: "#F59E0B",
+    green: "#10B981"
 };
 
 const PLACEHOLDER_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/BYD_Auto_logo_%282022%29.svg/1200px-BYD_Auto_logo_%282022%29.svg.png";
@@ -45,6 +45,7 @@ const StatusCard = ({ icon, color, title, subtitle, onPress }: any) => (
             <Text style={styles.statusTitle}>{title}</Text>
             {subtitle ? <Text style={styles.statusSubtitle}>{subtitle}</Text> : null}
         </View>
+        <Feather name="chevron-right" size={16} color={COLORS.textGray} />
     </TouchableOpacity>
 );
 
@@ -54,19 +55,31 @@ export default function IndexCliente() {
     const [condicionantes, setCondicionantes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [countVencidos, setCountVencidos] = useState(0);
-    const [countPendentes, setCountPendentes] = useState(0);
-    const [countAprovados, setCountAprovados] = useState(0);
+    // --- NOVOS CONTADORES ---
+    const [countCriticas, setCountCriticas] = useState(0);   // Vermelhas
+    const [countSeguras, setCountSeguras] = useState(0);     // Amarelas
+    const [countCumpridas, setCountCumpridas] = useState(0); // Verdes
 
-    const getStatusInfo = (dataString: any) => {
-        if (!dataString) return { color: COLORS.textGray, icon: "help-circle" };
-        const dataPrazo = moment(dataString, "YYYY-MM-DD");
+    // --- NOVA LÓGICA DE STATUS COM PRIORIDADE ---
+    const getStatusInfo = (item: any) => {
+        // 1. Verde (Cumpridas) - Prioridade 3 (Ficam por último)
+        if (item.status === 'cumprida') {
+            return { color: COLORS.green, icon: "check-circle", order: 3 };
+        }
+
+        if (!item.data) return { color: COLORS.textGray, icon: "help-circle", order: 4 };
+
+        const dataPrazo = moment(item.data, "YYYY-MM-DD");
         const hoje = moment();
         const diasRestantes = dataPrazo.diff(hoje, "days");
 
-        if (dataPrazo.isBefore(hoje, 'day')) return { color: COLORS.red, icon: "alert-circle" };
-        if (diasRestantes <= 30) return { color: COLORS.orange, icon: "clock" };
-        return { color: COLORS.green, icon: "check-circle" };
+        // 2. Vermelho (Vencidas ou <= 30 dias) - Prioridade 1 (Topo da lista)
+        if (diasRestantes <= 30) {
+            return { color: COLORS.red, icon: "alert-circle", order: 1 };
+        }
+        
+        // 3. Amarelo (No prazo, > 30 dias) - Prioridade 2 (Meio da lista)
+        return { color: COLORS.orange, icon: "clock", order: 2 };
     };
 
     const handleLogout = () => {
@@ -115,24 +128,27 @@ export default function IndexCliente() {
                         const conds = snapCond.docs.map(d => ({ id: d.id, ...d.data() }));
                         setCondicionantes(conds);
 
-                        let vencidosTemp = 0;
-                        let pendentesTemp = 0;
-                        let aprovadosTemp = 0;
+                        let criticasTemp = 0;
+                        let segurasTemp = 0;
+                        let cumpridasTemp = 0;
                         const hoje = moment();
 
                         conds.forEach((item: any) => {
-                            if (!item.data) return;
-                            const dataPrazo = moment(item.data, "YYYY-MM-DD");
-                            const diasRestantes = dataPrazo.diff(hoje, "days");
+                            if (item.status === 'cumprida') {
+                                cumpridasTemp++; // É Verde!
+                            } else {
+                                if (!item.data) return;
+                                const dataPrazo = moment(item.data, "YYYY-MM-DD");
+                                const diasRestantes = dataPrazo.diff(hoje, "days");
 
-                            if (dataPrazo.isBefore(hoje, 'day')) vencidosTemp++;
-                            else if (diasRestantes <= 30) pendentesTemp++;
-                            else aprovadosTemp++;
+                                if (diasRestantes <= 30) criticasTemp++; // É Vermelho!
+                                else segurasTemp++;                      // É Amarelo!
+                            }
                         });
 
-                        setCountVencidos(vencidosTemp);
-                        setCountPendentes(pendentesTemp);
-                        setCountAprovados(aprovadosTemp);
+                        setCountCriticas(criticasTemp);
+                        setCountSeguras(segurasTemp);
+                        setCountCumpridas(cumpridasTemp);
                     } else {
                         setCondicionantes([]);
                     }
@@ -160,11 +176,29 @@ export default function IndexCliente() {
     const DashboardContent = () => (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             
-            {/* --- STATUS CARDS --- */}
+            {/* --- STATUS CARDS (Agora Clicáveis) --- */}
             <View style={{ marginBottom: 12 }}>
-                <StatusCard icon="alert-triangle" color={COLORS.red} title="Condicionantes Vencidas" subtitle={`${countVencidos} ${countVencidos === 1 ? 'condicionante' : 'condicionantes'}`} />
-                <StatusCard icon="clock" color={COLORS.orange} title="Próximas do Vencimento" subtitle={`${countPendentes} ${countPendentes === 1 ? 'documento' : 'documentos'}`} />
-                <StatusCard icon="check-circle" color={COLORS.green} title="Condicionantes no Prazo" subtitle={`${countAprovados} ${countAprovados === 1 ? 'condicionante' : 'condicionantes'}`} />
+                <StatusCard 
+                    icon="alert-triangle" 
+                    color={COLORS.red} 
+                    title="Atenção Necessária" 
+                    subtitle={`${countCriticas} ${countCriticas === 1 ? 'condicionante crítica' : 'condicionantes críticas'}`} 
+                    onPress={() => Alert.alert('Aviso', 'A página de condicionantes em atenção será desenvolvida em breve!')}
+                />
+                <StatusCard 
+                    icon="clock" 
+                    color={COLORS.orange} 
+                    title="No Prazo" 
+                    subtitle={`${countSeguras} ${countSeguras === 1 ? 'condicionante segura' : 'condicionantes seguras'}`} 
+                    onPress={() => Alert.alert('Aviso', 'A página de condicionantes seguras será desenvolvida em breve!')}
+                />
+                <StatusCard 
+                    icon="check-circle" 
+                    color={COLORS.green} 
+                    title="Condicionantes Cumpridas" 
+                    subtitle={`${countCumpridas} ${countCumpridas === 1 ? 'condicionante concluída' : 'condicionantes concluídas'}`} 
+                    onPress={() => Alert.alert('Aviso', 'A página de condicionantes cumpridas será desenvolvida em breve!')}
+                />
             </View>
 
             {/* --- LISTA DE CONDICIONANTES --- */}
@@ -173,13 +207,23 @@ export default function IndexCliente() {
 
                 {condicionantes.length > 0 ? (
                     condicionantes
+                        // ORDENAÇÃO: Primeiro as Vermelhas (1), depois Amarelas (2), depois Verdes (3)
                         .sort((a, b) => {
+                            const statusA = getStatusInfo(a);
+                            const statusB = getStatusInfo(b);
+                            
+                            // Se a prioridade for diferente, ordena pela prioridade
+                            if (statusA.order !== statusB.order) {
+                                return statusA.order - statusB.order;
+                            }
+                            
+                            // Se forem da mesma cor (prioridade igual), desempatar por data (as mais antigas no topo)
                             const timeA = a.data ? moment(a.data, "YYYY-MM-DD").valueOf() : 0;
                             const timeB = b.data ? moment(b.data, "YYYY-MM-DD").valueOf() : 0;
                             return timeA - timeB;
                         })
                         .map((item, index) => {
-                            const { color, icon } = getStatusInfo(item.data);
+                            const { color, icon } = getStatusInfo(item);
                             const isLast = index === condicionantes.length - 1;
                             
                             // Lógica do sino de notificação
@@ -246,7 +290,6 @@ export default function IndexCliente() {
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
             
-            {/* --- O SEGREDO ESTÁ AQUI: Passando isCliente={true} --- */}
             <HomeHeader 
                 isCliente={true}
                 nomeContato={usuario?.nomeContato}
