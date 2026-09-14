@@ -142,8 +142,9 @@ export default function CheckCondicionante() {
         );
     };
 
-    // --- NOVA REGRA DE CORES ---
+    // --- NOVA REGRA DE CORES DEFINITIVA ---
     const getStatusPrazo = (data: string, statusCond: string) => {
+        // 1. SE FOI CUMPRIDA: Fica Verde, ignorando a data.
         if (statusCond === 'cumprida') {
             return { text: "Condicionante Cumprida", color: COLORS.green, bg: "#D1FAE5" };
         }
@@ -154,11 +155,14 @@ export default function CheckCondicionante() {
         const hoje = moment();
         const diasRestantes = dataPrazo.diff(hoje, 'days');
 
-        if (diasRestantes < 0) return { text: "Condicionante expirada", color: COLORS.red, bg: "#FEE2E2" };
-        if (diasRestantes <= 30) return { text: "Vencendo em breve", color: COLORS.orange, bg: "#FEF3C7" };
+        // 2. SE NÃO FOI CUMPRIDA: Verifica os dias.
+        // Vermelho: Vencida OU faltam 30 dias ou menos (Até 1 mês)
+        if (diasRestantes <= 30) {
+            return { text: diasRestantes < 0 ? "Condicionante expirada" : "Vencendo em breve", color: COLORS.red, bg: "#FEE2E2" };
+        }
         
-        // Azul para no prazo (não cumprida)
-        return { text: "No prazo", color: COLORS.blue, bg: "#DBEAFE" }; 
+        // Amarelo: Faltam mais de 30 dias
+        return { text: "Prazo seguro", color: COLORS.orange, bg: "#FEF3C7" }; 
     };
 
     const extractFileName = (url: string) => {
