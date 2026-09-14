@@ -1,18 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { 
-    View, 
-    Text, 
-    ScrollView, 
-    StyleSheet, 
-    TouchableOpacity, 
-    Linking, 
-    Platform, 
-    StatusBar,
-    SafeAreaView,
-    ActivityIndicator,
-    Alert
-} from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking, StatusBar, SafeAreaView, ActivityIndicator, Alert } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import moment from 'moment';
 import * as DocumentPicker from 'expo-document-picker';
@@ -23,19 +11,45 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { auth, db, storage } from "../../../config/firebase";
 
 // Componentes e Estilos
-import { BotaoVoltar } from "../../../componentes/botoes/back";
-import { BotaoSair } from "../../../componentes/botoes/exit";
 import { TEMAS } from "../../../estilos/temas";
+import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
+import HomeHeader from "../../../componentes/Headercliente"; 
+
+const COLORS = {
+    primary: TEMAS.colors.verde || "#10B981", 
+    background: "#F9FAFB", 
+    white: "#FFFFFF",
+    textDark: "#1F2937",
+    textGray: "#6B7280",
+    border: "#E5E7EB",
+    red: "#EF4444",
+    orange: "#F59E0B",
+    green: "#10B981",
+    blue: "#3B82F6" // Cor para o "No prazo"
+};
 
 export default function CheckCondicionante() {
-    const { id } = useLocalSearchParams(); 
+    const { id } = useLocalSearchParams();
     const condicionanteId = id as string;
-    
+
+    const [usuario, setUsuario] = useState<any>({});
     const [condicionante, setCondicionante] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-    // Função para buscar a condicionante no Firebase
+    const handleBuscarUsuario = async () => {
+        if (!auth.currentUser?.uid) return;
+        try {
+            const snapshot = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
+            if (snapshot.exists()) {
+                setUsuario(snapshot.data());
+            }
+        } catch (error) {
+            console.error("Erro ao buscar usuário:", error);
+        }
+    };
+
     const handleBuscarCondicionantes = async () => {
         if (!auth.currentUser?.uid || !condicionanteId) return;
 
@@ -44,9 +58,13 @@ export default function CheckCondicionante() {
             const snapshot = await getDoc(docRef);
 
             if (snapshot.exists()) {
-                setCondicionante(snapshot.data());
-            } else {
-                console.log("Nenhum condicionante encontrado.");
+                const data = snapshot.data();
+                setCondicionante(data);
+                
+                // Mágica de marcar como visualizada
+                if (data.visualizada === false || data.visualizada === undefined) {
+                    await updateDoc(docRef, { visualizada: true });
+                }
             }
         } catch (error) {
             console.error("Erro ao buscar condicionante:", error);
@@ -57,288 +75,277 @@ export default function CheckCondicionante() {
 
     const inserirComprovante = async () => {
         try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: "application/pdf",
-                copyToCacheDirectory: true,
-            });
+            const result = await DocumentPicker.getDocumentAsync({ type: "application/pdf", copyToCacheDirectory: true });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 setUploading(true);
                 const usuarioID = auth.currentUser?.uid;
-                
                 const file = result.assets[0];
                 const fileName = file.name || "comprovante.pdf";
-                
-                // Referência no Storage
+
                 const refComprovante = ref(storage, `arquivos/${usuarioID}/${condicionanteId}/${Date.now()}_${fileName}`);
 
-                // Converter URI para Blob e Upload
-                const response = await fetch(file.uri);
-                const blob = await response.blob();
-                
+                const blob: any = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.onload = function () { resolve(xhr.response); };
+                    xhr.onerror = function (e) { reject(new TypeError("Falha na requisição")); };
+                    xhr.responseType = "blob";
+                    xhr.open("GET", file.uri, true);
+                    xhr.send(null);
+                });
+
                 await uploadBytes(refComprovante, blob);
                 const url = await getDownloadURL(refComprovante);
 
-                // Atualizar Firestore
                 if (usuarioID) {
-                    await updateDoc(doc(db, "usuarios", usuarioID, 'condicionantes', condicionanteId), { 
-                        comprovante: url 
-                    });
+                    await updateDoc(doc(db, "usuarios", usuarioID, 'condicionantes', condicionanteId), { comprovante: url });
                 }
 
                 setCondicionante((prevState: any) => ({ ...prevState, comprovante: url }));
-                Alert.alert("Sucesso", "Comprovante enviado!");
+                Alert.alert("Sucesso", "Comprovante anexado!");
             }
         } catch (error) {
-            console.error("Erro upload:", error);
             Alert.alert("Erro", "Falha ao enviar comprovante.");
         } finally {
             setUploading(false);
         }
     };
 
-    const getStatusPrazo = (data: string) => {
-        if (!data) return { text: "Sem data", color: "#999" };
+    const handleMarcarCumprida = () => {
+        Alert.alert(
+            "Confirmar",
+            "Deseja marcar esta condicionante como cumprida?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                { 
+                    text: "Sim, cumprida!", 
+                    onPress: async () => {
+                        setIsUpdatingStatus(true);
+                        try {
+                            const usuarioID = auth.currentUser?.uid;
+                            if (usuarioID) {
+                                await updateDoc(doc(db, "usuarios", usuarioID, 'condicionantes', condicionanteId), {
+                                    status: 'cumprida',
+                                    adminVisualizou: false
+                                });
+                                setCondicionante((prev: any) => ({ ...prev, status: 'cumprida' }));
+                                Alert.alert("Sucesso!", "Condicionante finalizada!");
+                            }
+                        } catch (error) {
+                            Alert.alert("Erro", "Não foi possível atualizar o status.");
+                        } finally {
+                            setIsUpdatingStatus(false);
+                        }
+                    } 
+                }
+            ]
+        );
+    };
+
+    // --- NOVA REGRA DE CORES ---
+    const getStatusPrazo = (data: string, statusCond: string) => {
+        if (statusCond === 'cumprida') {
+            return { text: "Condicionante Cumprida", color: COLORS.green, bg: "#D1FAE5" };
+        }
+
+        if (!data) return { text: "Sem data", color: COLORS.textGray, bg: "#f3f4f6" };
         
         const dataPrazo = moment(data, 'YYYY-MM-DD');
         const hoje = moment();
         const diasRestantes = dataPrazo.diff(hoje, 'days');
 
-        if (diasRestantes < 0) {
-            return { text: "A condicionante já expirou", color: "#EF4444" }; // Vermelho
-        } else if (diasRestantes <= 30) {
-            return { text: "Falta pouco tempo para o fim do prazo", color: "#F59E0B" }; // Laranja
-        } else {
-            return { text: "Esta condicionante está dentro do prazo", color: "#10B981" }; // Verde
-        }
+        if (diasRestantes < 0) return { text: "Condicionante expirada", color: COLORS.red, bg: "#FEE2E2" };
+        if (diasRestantes <= 30) return { text: "Vencendo em breve", color: COLORS.orange, bg: "#FEF3C7" };
+        
+        // Azul para no prazo (não cumprida)
+        return { text: "No prazo", color: COLORS.blue, bg: "#DBEAFE" }; 
     };
 
     const extractFileName = (url: string) => {
         if (!url) return "Visualizar Comprovante";
         try {
-            // Tenta decodificar o nome do arquivo da URL do Firebase Storage
             const decoded = decodeURIComponent(url);
-            const splitName = decoded.split('/').pop()?.split('?')[0];
-            return splitName || "Visualizar Comprovante";
-        } catch (e) {
-            return "Visualizar Comprovante";
-        }
+            return decoded.split('/').pop()?.split('?')[0] || "Visualizar Comprovante";
+        } catch (e) { return "Visualizar Comprovante"; }
+    };
+
+    const handleContato = (telefone: string) => {
+        if (!telefone) return Alert.alert("Aviso", "Telefone não cadastrado.");
+        const numeroLimpo = telefone.replace(/\D/g, '');
+        Linking.openURL(`tel:${numeroLimpo}`).catch(() => {
+            Alert.alert("Erro", "Não foi possível abrir o discador nativo do celular.");
+        });
     };
 
     useEffect(() => {
+        handleBuscarUsuario();
         handleBuscarCondicionantes();
     }, [condicionanteId]);
+
+    const nomeEmpresa = usuario?.empresa || "Cliente";
+    const PLACEHOLDER_IMAGE = `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeEmpresa)}&background=10B981&color=fff&size=200`;
+    
+    const fotoParaExibir = usuario?.fotoPerfilCliente || usuario?.fotoPerfil;
+    const imagemFinalUri = (fotoParaExibir && fotoParaExibir !== "") ? fotoParaExibir : PLACEHOLDER_IMAGE;
 
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={TEMAS.colors.verde} />
+                <ActivityIndicator size="large" color={COLORS.primary} />
             </View>
         );
     }
 
-    const status = getStatusPrazo(condicionante?.data);
+    const status = getStatusPrazo(condicionante?.data, condicionante?.status);
     const fileName = extractFileName(condicionante?.comprovante);
+    const isCumprida = condicionante?.status === 'cumprida';
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor={TEMAS.colors.verde} />
-
-            {/* --- HEADER --- */}
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <BotaoVoltar />
-                </View>
-                <View style={styles.headerCenter}>
-                    <Text style={styles.headerTitle}>LicenSync</Text>
-                </View>
-                <View style={styles.headerRight}>
-                    <BotaoSair />
-                </View>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                
-                {condicionante ? (
-                    <>
-                        {/* --- CARTÃO DE DESCRIÇÃO --- */}
-                        <View style={styles.card}>
-                            <Text style={styles.label}>Condicionante:</Text>
-                            <Text style={styles.description}>
-                                {condicionante.condicionante || "Sem descrição."}
-                            </Text>
-                        </View>
-
-                        {/* --- CARTÃO DE PRAZO --- */}
-                        <View style={styles.card}>
-                            <Text style={styles.label}>Data de Vencimento:</Text>
-                            <Text style={styles.dateText}>
-                                {condicionante.data ? moment(condicionante.data).format("DD/MM/YYYY") : "--/--/----"}
-                            </Text>
-                            
-                            <View style={[styles.statusBadge, { backgroundColor: status.color + '20' }]}>
-                                <Text style={[styles.statusText, { color: status.color }]}>
-                                    {status.text}
+    const pageContent = (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+            {condicionante ? (
+                <>
+                    {/* CARTÃO DE VENCIMENTO COM CORES ATUALIZADAS */}
+                    <View style={[styles.modernCard, { borderTopWidth: 4, borderTopColor: status.color }]}>
+                        <View style={styles.dateHeaderRow}>
+                            <View style={styles.dateIconWrapper}>
+                                <Feather name="calendar" size={24} color={COLORS.primary} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.labelMuted}>Data de Vencimento</Text>
+                                <Text style={styles.dateTextHigh}>
+                                    {condicionante.data ? moment(condicionante.data).format("DD/MM/YYYY") : "--/--/----"}
                                 </Text>
                             </View>
                         </View>
+                        
+                        <View style={[styles.modernStatusPill, { backgroundColor: status.bg }]}>
+                            <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+                            <Text style={[styles.modernStatusText, { color: status.color }]}>{status.text}</Text>
+                        </View>
+                    </View>
+
+                    {/* CARTÃO DE DESCRIÇÃO */}
+                    <View style={styles.modernCard}>
+                        <Text style={styles.label}>Descrição da Condicionante</Text>
+                        <Text style={styles.description}>
+                            {condicionante.condicionante || "Sem descrição."}
+                        </Text>
+                    </View>
+
+                    {/* AÇÕES E COMPROVANTE */}
+                    <View style={styles.actionsContainer}>
+                        
+                        <TouchableOpacity
+                            style={[styles.btnOutline, uploading && { opacity: 0.7 }]}
+                            onPress={inserirComprovante}
+                            disabled={uploading || isCumprida}
+                        >
+                            {uploading ? (
+                                <ActivityIndicator color={COLORS.primary} />
+                            ) : (
+                                <>
+                                    <Feather name="upload-cloud" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+                                    <Text style={styles.btnOutlineText}>
+                                        {condicionante?.comprovante ? "Substituir Comprovante" : "Anexar Comprovante (PDF)"}
+                                    </Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+
+                        {condicionante?.comprovante && (
+                            <TouchableOpacity style={styles.btnView} onPress={() => Linking.openURL(condicionante.comprovante)}>
+                                <Feather name="file-text" size={18} color={COLORS.textDark} style={{ marginRight: 8 }} />
+                                <Text style={styles.btnViewText} numberOfLines={1}>{fileName}</Text>
+                            </TouchableOpacity>
+                        )}
 
                         <View style={styles.divider} />
 
-                        {/* --- AÇÕES --- */}
-                        <View style={styles.actionsContainer}>
-                            <TouchableOpacity 
-                                style={[styles.actionButton, styles.uploadButton]} 
-                                onPress={inserirComprovante}
-                                disabled={uploading}
-                            >
-                                {uploading ? (
-                                    <ActivityIndicator color="#fff" />
-                                ) : (
-                                    <>
-                                        <Feather name="upload" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                        <Text style={styles.uploadButtonText}>Inserir Comprovante (PDF)</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-
-                            {condicionante?.comprovante && (
-                                <TouchableOpacity 
-                                    style={[styles.actionButton, styles.viewButton]}
-                                    onPress={() => Linking.openURL(condicionante.comprovante)}
-                                >
-                                    <Feather name="file-text" size={20} color="#333" style={{ marginRight: 8 }} />
-                                    <Text style={styles.viewButtonText} numberOfLines={1}>
-                                        {fileName}
+                        {/* BOTÃO CUMPRIDA */}
+                        <TouchableOpacity
+                            style={[
+                                styles.btnSolid, 
+                                isCumprida ? styles.btnSuccess : styles.btnPrimary,
+                                !condicionante?.comprovante && !isCumprida && { opacity: 0.5 }
+                            ]}
+                            onPress={handleMarcarCumprida}
+                            disabled={isCumprida || !condicionante?.comprovante || isUpdatingStatus}
+                        >
+                            {isUpdatingStatus ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                <>
+                                    <Feather name={isCumprida ? "check-circle" : "check"} size={22} color="#FFF" style={{ marginRight: 8 }} />
+                                    <Text style={styles.btnSolidText}>
+                                        {isCumprida ? "Condicionante Cumprida" : "Marcar como Cumprida"}
                                     </Text>
-                                </TouchableOpacity>
+                                </>
                             )}
-                        </View>
-                    </>
-                ) : (
-                    <Text style={styles.notFoundText}>Condicionante não encontrada.</Text>
-                )}
+                        </TouchableOpacity>
+                        
+                        {!condicionante?.comprovante && !isCumprida && (
+                            <Text style={styles.helperText}>* Anexe um comprovante para finalizar.</Text>
+                        )}
 
-            </ScrollView>
+                    </View>
+                </>
+            ) : (
+                <Text style={styles.notFoundText}>Condicionante não encontrada.</Text>
+            )}
+        </ScrollView>
+    );
+
+    return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+            <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+            
+            {/* O SEU HEADER GLOBAL AQUI */}
+            <HomeHeader
+                isCliente={true}
+                isVoltar={true} // <-- FORÇA A EXIBIÇÃO DA SETA DE VOLTAR
+                nomeContato={usuario?.nomeContato}
+                empresa={usuario?.empresa}
+                telefone={usuario?.telefone1}
+                onPhonePress={() => handleContato(usuario?.telefone1)}
+                userImage={imagemFinalUri}
+                onLogoutPress={() => router.back()} // Ação do botão da direita
+            />
+
+            <ScreenContainer bottomContent={pageContent} />
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F3F4F6',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    // HEADER
-    header: {
-        width: '100%',
-        height: 80,
-        paddingTop: Platform.OS === 'android' ? 30 : 0,
-        backgroundColor: TEMAS.colors.verde,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-    },
-    headerLeft: { flex: 1 },
-    headerCenter: { flex: 4, alignItems: 'center' },
-    headerRight: { flex: 1, alignItems: 'flex-end' },
-    headerTitle: {
-        color: '#fff',
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    // CONTEÚDO
-    scrollContent: {
-        padding: 20,
-    },
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#374151',
-        marginBottom: 8,
-        textTransform: 'uppercase',
-    },
-    description: {
-        fontSize: 16,
-        color: '#1F2937',
-        lineHeight: 24,
-    },
-    dateText: {
-        fontSize: 18,
-        color: '#1F2937',
-        fontWeight: '500',
-        marginBottom: 10,
-    },
-    statusBadge: {
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-        alignSelf: 'flex-start',
-    },
-    statusText: {
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: TEMAS.colors.verde,
-        marginVertical: 10,
-        opacity: 0.3,
-    },
-    // BOTÕES
-    actionsContainer: {
-        marginTop: 10,
-        gap: 12,
-    },
-    actionButton: {
-        flexDirection: 'row',
-        height: 50,
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-    },
-    uploadButton: {
-        backgroundColor: TEMAS.colors.verde || "green",
-    },
-    uploadButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    viewButton: {
-        backgroundColor: '#E5E7EB', // Cinza claro
-        borderWidth: 1,
-        borderColor: '#D1D5DB',
-    },
-    viewButtonText: {
-        color: '#1F2937',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    notFoundText: {
-        textAlign: 'center',
-        marginTop: 50,
-        color: '#6B7280',
-        fontSize: 16,
-    }
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
+    scrollContent: { padding: 16, paddingBottom: 40 },
+    
+    modernCard: { backgroundColor: COLORS.white, borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+    dateHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    dateIconWrapper: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#ECFDF5', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    labelMuted: { fontSize: 13, color: COLORS.textGray, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+    dateTextHigh: { fontSize: 20, fontWeight: 'bold', color: COLORS.textDark },
+    
+    modernStatusPill: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, alignSelf: 'flex-start' },
+    statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+    modernStatusText: { fontSize: 14, fontWeight: '600' },
+    
+    label: { fontSize: 14, fontWeight: 'bold', color: COLORS.textDark, marginBottom: 8, textTransform: 'uppercase' },
+    description: { fontSize: 15, color: COLORS.textGray, lineHeight: 24 },
+    divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 16 },
+    
+    actionsContainer: { marginTop: 8 },
+    btnOutline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.primary, borderRadius: 12, height: 54, marginBottom: 12, borderStyle: 'dashed' },
+    btnOutlineText: { color: COLORS.primary, fontSize: 15, fontWeight: 'bold' },
+    
+    btnView: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, height: 50, marginBottom: 12 },
+    btnViewText: { color: COLORS.textDark, fontSize: 14, fontWeight: '600' },
+    
+    btnSolid: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, height: 54, elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3 },
+    btnPrimary: { backgroundColor: COLORS.primary },
+    btnSuccess: { backgroundColor: COLORS.green },
+    btnSolidText: { color: COLORS.white, fontSize: 16, fontWeight: 'bold' },
+    
+    helperText: { textAlign: 'center', color: COLORS.orange, fontSize: 12, marginTop: 8, fontStyle: 'italic' },
+    notFoundText: { textAlign: 'center', marginTop: 50, color: COLORS.textGray, fontSize: 16 }
 });
