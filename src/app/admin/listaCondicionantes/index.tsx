@@ -56,7 +56,6 @@ export default function ListaCondicionantesAdmin() {
               condSnap.forEach(docCond => {
                 const dataCond = docCond.data();
                 
-                // MÁGICA DO FILTRO: Verifica se a condicionante se encaixa no 'tipo' da URL
                 let encaixaNoFiltro = false;
                 
                 if (tipo === 'cumpridas') {
@@ -82,7 +81,6 @@ export default function ListaCondicionantesAdmin() {
             }
           }
 
-          // Ordena pelas mais antigas/vencendo primeiro
           todasCondicionantes.sort((a, b) => {
             const timeA = a.data ? moment(a.data, "YYYY-MM-DD").valueOf() : 0;
             const timeB = b.data ? moment(b.data, "YYYY-MM-DD").valueOf() : 0;
@@ -116,10 +114,13 @@ export default function ListaCondicionantesAdmin() {
         condicionantes.map((item, index) => {
           const fotoUri = item.clienteFoto || PLACEHOLDER_IMAGE;
           
+          // MÁGICA DA NOTIFICAÇÃO: É cumprida E o Admin ainda não viu?
+          const isUnread = item.status === 'cumprida' && item.adminVisualizou === false;
+
           return (
             <TouchableOpacity 
               key={index} 
-              style={styles.card}
+              style={[styles.card, isUnread && styles.unreadCard]}
               onPress={() => router.push(`/admin/detalheCondicionante?clienteId=${item.clienteId}&condicionanteId=${item.id}`)}
             >
               <View style={styles.cardHeader}>
@@ -130,6 +131,14 @@ export default function ListaCondicionantesAdmin() {
                     Prazo: {item.data ? moment(item.data, "YYYY-MM-DD").format("DD/MM/YYYY") : "--/--/----"}
                   </Text>
                 </View>
+                
+                {/* ETIQUETA "NOVA" PRO ADMIN VER */}
+                {isUnread && (
+                    <View style={styles.notificationBadge}>
+                        <Feather name="bell" size={12} color="#FFF" />
+                        <Text style={styles.notificationBadgeText}>Nova</Text>
+                    </View>
+                )}
               </View>
               
               <View style={styles.cardBody}>
@@ -167,6 +176,12 @@ const styles = StyleSheet.create({
   headerBanner: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1, marginBottom: 20 },
   headerBannerText: { fontSize: 18, fontWeight: 'bold' },
   card: { backgroundColor: COLORS.white, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  
+  // ESTILOS DA NOTIFICAÇÃO
+  unreadCard: { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' },
+  notificationBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EF4444', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  notificationBadgeText: { color: '#FFF', fontSize: 11, fontWeight: 'bold', marginLeft: 4 },
+  
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   clientAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12, borderWidth: 1, borderColor: COLORS.border },
   clientInfo: { flex: 1 },
