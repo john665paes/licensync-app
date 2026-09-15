@@ -30,9 +30,8 @@ const StatusCard = ({ icon, color, title, subtitle, onPress }: any) => (
     </TouchableOpacity>
 );
 
-// --- COMPONENTE ClientItem ATUALIZADO ---
+// --- COMPONENTE ClientItem ATUALIZADO COM O SINO ---
 const ClientItem = ({ data, onPress }: any) => {
-    // Tenta pegar a foto de perfil usando as duas nomenclaturas possíveis
     const fotoUri = data.fotoPerfilCliente || data.fotoPerfil;
 
     return (
@@ -51,9 +50,20 @@ const ClientItem = ({ data, onPress }: any) => {
                 )}
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.clientName}>{data.empresa || data.nome || "Sem Nome"}</Text>
+                <Text style={[styles.clientName, data.hasUnread && { fontWeight: 'bold' }]}>
+                    {data.empresa || data.nome || "Sem Nome"}
+                </Text>
                 <Text style={styles.clientDate}>Atualizado em {data.dataAtualizacao || "Não informado"}</Text>
             </View>
+            
+            {/* SINO DE NOTIFICAÇÃO DO ADMIN */}
+            {data.hasUnread && (
+                <View style={styles.notificationBell}>
+                    <Feather name="bell" size={18} color="#EF4444" />
+                    <View style={styles.notificationDot} />
+                </View>
+            )}
+
             <Feather name="chevron-right" size={24} color="#6B7280" />
         </TouchableOpacity>
     );
@@ -65,10 +75,9 @@ export default function IndexADM() {
     const [loading, setLoading] = useState(false);
     const [listaClientes, setListaClientes] = useState<any[]>([]);
     
-    // --- NOVOS CONTADORES NO PADRÃO DO SISTEMA ---
-    const [countCriticas, setCountCriticas] = useState(0);   // Vermelhas
-    const [countSeguras, setCountSeguras] = useState(0);     // Amarelas
-    const [countCumpridas, setCountCumpridas] = useState(0); // Verdes
+    const [countCriticas, setCountCriticas] = useState(0);   
+    const [countSeguras, setCountSeguras] = useState(0);     
+    const [countCumpridas, setCountCumpridas] = useState(0); 
     
     const [searchText, setSearchText] = useState('');
 
@@ -103,25 +112,27 @@ export default function IndexADM() {
                             return empresaA.localeCompare(empresaB);
                         });
 
-                    setListaClientes(clientesFiltrados);
-
-                    // Variáveis temporárias para a contagem
                     let criticasTemp = 0;
                     let segurasTemp = 0;
                     let cumpridasTemp = 0;
                     const hoje = moment();
+                    const clientesComNotificacao: any[] = [];
                     
-                    // Varre todos os clientes para somar as condicionantes
+                    // Varre todos os clientes para somar as condicionantes e checar notificações
                     for (const cliente of clientesFiltrados) {
                         const condicionantesRef = collection(db, "usuarios", cliente.id, "condicionantes");
                         const snapshotCondicionantes = await getDocs(condicionantesRef);
 
+                        let hasUnread = false;
+
                         snapshotCondicionantes.forEach((docCond) => {
                             const data = docCond.data();
                             
-                            // Lógica idêntica a do cliente
                             if (data.status === 'cumprida') {
-                                cumpridasTemp++; // É Verde!
+                                cumpridasTemp++; 
+                                if (data.adminVisualizou === false) {
+                                    hasUnread = true; // Ativa o sino para este cliente
+                                }
                             } else {
                                 const dataString = data.data;
                                 if (!dataString) return;
@@ -130,14 +141,17 @@ export default function IndexADM() {
                                 const diasRestantes = dataPrazo.diff(hoje, "days");
 
                                 if (diasRestantes <= 30) {
-                                    criticasTemp++; // É Vermelho! (Vencidas ou <= 30 dias)
+                                    criticasTemp++; 
                                 } else {
-                                    segurasTemp++;  // É Amarelo! (> 30 dias)
+                                    segurasTemp++;  
                                 }
                             }
                         });
+                        
+                        clientesComNotificacao.push({ ...cliente, hasUnread });
                     }
 
+                    setListaClientes(clientesComNotificacao);
                     setCountCriticas(criticasTemp);
                     setCountSeguras(segurasTemp);
                     setCountCumpridas(cumpridasTemp);
@@ -247,11 +261,10 @@ export default function IndexADM() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
         >
-            {/* CARDS ATUALIZADOS */}
             <View style={{ marginTop: 10 }}>
                 <StatusCard
                     icon="alert-triangle"
-                    color="#EF4444" // Vermelho
+                    color="#EF4444" 
                     title="Atenção Necessária"
                     subtitle={`${countCriticas} ${countCriticas === 1 ? 'condicionante crítica' : 'condicionantes críticas'}`}
                    onPress={() => router.push('/admin/listaCondicionantes?tipo=criticas')}
@@ -259,7 +272,7 @@ export default function IndexADM() {
 
                 <StatusCard
                     icon="clock"
-                    color="#F59E0B" // Amarelo/Laranja
+                    color="#F59E0B" 
                     title="No Prazo"
                     subtitle={`${countSeguras} ${countSeguras === 1 ? 'condicionante no prazo' : 'condicionantes no prazo'}`}
                     onPress={() => router.push('/admin/listaCondicionantes?tipo=seguras')}
@@ -267,7 +280,7 @@ export default function IndexADM() {
 
                 <StatusCard
                     icon="check-circle"
-                    color="#10B981" // Verde
+                    color="#10B981" 
                     title="Condicionantes Cumpridas"
                     subtitle={`${countCumpridas} ${countCumpridas === 1 ? 'condicionante concluída' : 'condicionantes concluídas'}`}
                     onPress={() => router.push('/admin/listaCondicionantes?tipo=cumpridas')}
@@ -422,4 +435,8 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#374151',
     },
+    
+    // --- ESTILOS DO SINO ---
+    notificationBell: { marginRight: 12, position: 'relative' },
+    notificationDot: { position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1.5, borderColor: '#FFF' },
 });
