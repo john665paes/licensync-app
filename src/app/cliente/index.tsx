@@ -183,21 +183,21 @@ export default function IndexCliente() {
                     color={COLORS.red} 
                     title="Atenção Necessária" 
                     subtitle={`${countCriticas} ${countCriticas === 1 ? 'condicionante crítica' : 'condicionantes críticas'}`} 
-                    onPress={() => Alert.alert('Aviso', 'A página de condicionantes em atenção será desenvolvida em breve!')}
+                    onPress={() => router.push('/cliente/listaCondicionantes?tipo=criticas')}
                 />
                 <StatusCard 
                     icon="clock" 
                     color={COLORS.orange} 
                     title="No Prazo" 
                     subtitle={`${countSeguras} ${countSeguras === 1 ? 'condicionante segura' : 'condicionantes seguras'}`} 
-                    onPress={() => Alert.alert('Aviso', 'A página de condicionantes seguras será desenvolvida em breve!')}
+                    onPress={() => router.push('/cliente/listaCondicionantes?tipo=seguras')}
                 />
                 <StatusCard 
                     icon="check-circle" 
                     color={COLORS.green} 
                     title="Condicionantes Cumpridas" 
                     subtitle={`${countCumpridas} ${countCumpridas === 1 ? 'condicionante concluída' : 'condicionantes concluídas'}`} 
-                    onPress={() => Alert.alert('Aviso', 'A página de condicionantes cumpridas será desenvolvida em breve!')}
+                    onPress={() => router.push('/cliente/listaCondicionantes?tipo=cumpridas')}
                 />
             </View>
 
