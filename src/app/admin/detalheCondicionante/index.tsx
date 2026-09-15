@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  Alert, ActivityIndicator, TextInput, Platform 
+  Alert, ActivityIndicator, TextInput, Platform, Linking
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -9,7 +9,7 @@ import { db } from "../../../config/firebase";
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { Feather } from "@expo/vector-icons";
 import moment from "moment";
-import DateTimePicker from '@react-native-community/datetimepicker'; // <-- Importado o Picker
+import DateTimePicker from '@react-native-community/datetimepicker'; 
 import HomeHeader from "../../../componentes/HomeHeader";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
 import { theme } from "../../../estilos/themes";
@@ -72,6 +72,13 @@ export default function DetalhesCondicionante() {
         setCondicionante(data);
         setTextoEditado(data.condicionante || "");
         setDataEditada(data.data || "");
+
+        // --- MÁGICA DE NOTIFICAÇÃO DO ADMIN ---
+        // Se a condicionante foi cumprida e o Admin ainda não tinha visto, marca como vista!
+        if (data.status === 'cumprida' && data.adminVisualizou === false) {
+            await updateDoc(docRef, { adminVisualizou: true });
+        }
+
       } else {
         Alert.alert("Erro", "Condicionante não encontrada.");
         if (router.canGoBack()) router.back(); else router.replace('/admin');
@@ -111,12 +118,15 @@ export default function DetalhesCondicionante() {
       setLoading(true);
       const docRef = doc(db, "usuarios", clienteId as string, "condicionantes", condicionanteId as string);
       
+      // Quando o Admin edita, removemos o status de cumprida se houver, pois é um novo prazo/texto
       await updateDoc(docRef, {
         condicionante: textoEditado,
-        data: dataEditada
+        data: dataEditada,
+        status: 'pendente', // Retorna para pendente após editar
+        adminVisualizou: true
       });
 
-      setCondicionante({ ...condicionante, condicionante: textoEditado, data: dataEditada });
+      setCondicionante({ ...condicionante, condicionante: textoEditado, data: dataEditada, status: 'pendente' });
       setIsEditing(false);
       
       Alert.alert(
@@ -156,6 +166,17 @@ export default function DetalhesCondicionante() {
     ]);
   };
 
+  // Função para limpar e extrair o nome do PDF na URL do Storage
+  const extractFileName = (url: string) => {
+    if (!url) return "Visualizar Comprovante";
+    try {
+        const decoded = decodeURIComponent(url);
+        return decoded.split('/').pop()?.split('?')[0] || "Visualizar Comprovante";
+    } catch (e) { return "Visualizar Comprovante"; }
+  };
+
+  const isCumprida = condicionante?.status === 'cumprida';
+
   const pageContent = (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       {loading ? (
@@ -178,28 +199,34 @@ export default function DetalhesCondicionante() {
               
               <Text style={styles.label}>Data de Vencimento :</Text>
               
-              {/* Botão para abrir o Calendário */}
-              <TouchableOpacity 
-                  style={styles.datePickerButton} 
-                  onPress={() => setShowPicker(true)}
-              >
-                  <Feather name="calendar" size={20} color={COLORS.primary} style={{ marginRight: 10 }} />
-                  <Text style={styles.datePickerText}>
-                      {dataEditada ? moment(dataEditada, "YYYY-MM-DD").format('DD/MM/YYYY') : "Selecionar data"}
-                  </Text>
-              </TouchableOpacity>
-
-              {/* Calendário Nativo */}
-              {showPicker && (
-                  <DateTimePicker
-                      testID="datetimepicker"
-                      // Se já houver data, abre nela. Se não, abre na data de hoje
-                      value={dataEditada ? moment(dataEditada, "YYYY-MM-DD").toDate() : new Date()}
-                      mode="date"
-                      display="default"
-                      onValueChange={handleDateChange}
-                      onDismiss={handleDismiss}
+              {Platform.OS === 'web' ? (
+                  // @ts-ignore
+                  <input 
+                      type="date"
+                      value={dataEditada}
+                      onChange={(e: any) => setDataEditada(e.target.value)}
+                      style={{ padding: '12px', borderRadius: '8px', border: '1px solid #E5E7EB', outline: 'none', marginBottom: '20px', fontSize: '16px', color: COLORS.textDark, backgroundColor: COLORS.background, width: '100%', boxSizing: 'border-box' }}
                   />
+              ) : (
+                  <>
+                    <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowPicker(true)}>
+                        <Feather name="calendar" size={20} color={COLORS.primary} style={{ marginRight: 10 }} />
+                        <Text style={styles.datePickerText}>
+                            {dataEditada ? moment(dataEditada, "YYYY-MM-DD").format('DD/MM/YYYY') : "Selecionar data"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {showPicker && (
+                        <DateTimePicker
+                            testID="datetimepicker"
+                            value={dataEditada ? moment(dataEditada, "YYYY-MM-DD").toDate() : new Date()}
+                            mode="date"
+                            display="default"
+                            onValueChange={handleDateChange}
+                            onDismiss={handleDismiss}
+                        />
+                    )}
+                  </>
               )}
 
               <View style={styles.actionRow}>
@@ -220,6 +247,15 @@ export default function DetalhesCondicionante() {
           ) : (
             /* MODO DE VISUALIZAÇÃO */
             <View style={styles.viewContainer}>
+              
+              {/* --- NOVO: STATUS BADGE PARA O ADMIN VER --- */}
+              {isCumprida && (
+                  <View style={styles.statusBadge}>
+                      <Feather name="check-circle" size={18} color={COLORS.green} style={{ marginRight: 8 }} />
+                      <Text style={styles.statusBadgeText}>Marcada como Cumprida pelo cliente</Text>
+                  </View>
+              )}
+
               <Text style={styles.viewLabel}>Texto da Condicionante:</Text>
               <View style={styles.textArea}>
                 <Text style={styles.viewText}>{condicionante?.condicionante}</Text>
@@ -232,7 +268,24 @@ export default function DetalhesCondicionante() {
                  </Text>
               </View>
 
-              <View style={styles.actionRow}>
+              {/* --- NOVO: BOTÃO DE VER O COMPROVANTE --- */}
+              {condicionante?.comprovante && (
+                  <>
+                    <Text style={styles.viewLabel}>Comprovante Anexado:</Text>
+                    <TouchableOpacity 
+                        style={styles.btnViewComprovante} 
+                        onPress={() => Linking.openURL(condicionante.comprovante)}
+                    >
+                        <Feather name="file-text" size={20} color={COLORS.textDark} style={{ marginRight: 10 }} />
+                        <Text style={styles.btnViewComprovanteText} numberOfLines={1}>
+                            {extractFileName(condicionante.comprovante)}
+                        </Text>
+                        <Feather name="external-link" size={18} color={COLORS.textGray} />
+                    </TouchableOpacity>
+                  </>
+              )}
+
+              <View style={[styles.actionRow, { marginTop: 20 }]}>
                 <TouchableOpacity style={[styles.btnAction, { borderColor: COLORS.red }]} onPress={handleApagar}>
                   <Feather name="trash-2" size={16} color={COLORS.red} style={{ marginRight: 6 }} />
                   <Text style={[styles.btnText, { color: COLORS.red }]}>Apagar</Text>
@@ -263,103 +316,26 @@ export default function DetalhesCondicionante() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  cardContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textDark,
-    marginBottom: 20,
-    textAlign: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingBottom: 10,
-  },
-  formContainer: {
-    marginTop: 10,
-  },
-  viewContainer: {
-    marginTop: 10,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textGray,
-    marginBottom: 8,
-  },
-  viewLabel: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: COLORS.textGray,
-    marginBottom: 4,
-    textTransform: "uppercase"
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: COLORS.textDark,
-    backgroundColor: COLORS.background,
-    marginBottom: 20,
-  },
-  textArea: {
-    backgroundColor: COLORS.background,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  viewText: {
-    fontSize: 16,
-    color: COLORS.textDark,
-    lineHeight: 24,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  btnAction: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    marginHorizontal: 5,
-  },
-  btnText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  datePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: COLORS.background,
-    marginBottom: 20,
-  },
-  datePickerText: {
-    fontSize: 16,
-    color: COLORS.textDark,
-  },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  cardContainer: { backgroundColor: COLORS.white, borderRadius: 12, padding: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 3 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: COLORS.textDark, marginBottom: 20, textAlign: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: 10 },
+  formContainer: { marginTop: 10 },
+  viewContainer: { marginTop: 10 },
+  
+  // Novos estilos
+  statusBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, marginBottom: 20, borderWidth: 1, borderColor: '#A7F3D0' },
+  statusBadgeText: { color: COLORS.green, fontWeight: 'bold', fontSize: 14, flex: 1 },
+  btnViewComprovante: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 14, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, marginBottom: 20 },
+  btnViewComprovanteText: { flex: 1, color: COLORS.textDark, fontSize: 14, fontWeight: '600' },
+  
+  label: { fontSize: 14, fontWeight: "600", color: COLORS.textGray, marginBottom: 8 },
+  viewLabel: { fontSize: 12, fontWeight: "bold", color: COLORS.textGray, marginBottom: 4, textTransform: "uppercase" },
+  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, padding: 12, fontSize: 16, color: COLORS.textDark, backgroundColor: COLORS.background, marginBottom: 20 },
+  textArea: { backgroundColor: COLORS.background, borderRadius: 8, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: COLORS.border },
+  viewText: { fontSize: 16, color: COLORS.textDark, lineHeight: 24 },
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  btnAction: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingVertical: 12, marginHorizontal: 5 },
+  btnText: { fontSize: 14, fontWeight: 'bold' },
+  datePickerButton: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, padding: 12, backgroundColor: COLORS.background, marginBottom: 20 },
+  datePickerText: { fontSize: 16, color: COLORS.textDark },
 });
