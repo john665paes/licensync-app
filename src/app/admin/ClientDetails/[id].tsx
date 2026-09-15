@@ -9,13 +9,12 @@ import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { db, storage } from "../../../config/firebase";
 import { collection, doc, getDoc, getDocs, updateDoc, deleteDoc } from "firebase/firestore";
 import * as DocumentPicker from "expo-document-picker";
-// --- ADICIONADO deleteObject NA IMPORTAÇÃO DO STORAGE ---
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import moment from "moment";
 import HomeHeader from "../../../componentes/HomeHeader";
 import { ScreenContainer } from "../../../componentes/ScreenContainerpags";
 import { theme } from "../../../estilos/themes";
-import { UserCog, ShieldCheck, LogOut, TrashIcon, Trash2 } from 'lucide-react-native';
+import { UserCog, ShieldCheck, Trash2 } from 'lucide-react-native';
 
 const COLORS = {
   primary: theme.colors.primary, 
@@ -26,6 +25,7 @@ const COLORS = {
   border: "#E5E7EB",
   red: "#EF4444",
   orange: "#F59E0B",
+  green: "#10B981"
 };
 
 const PLACEHOLDER_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/BYD_Auto_logo_%282022%29.svg/1200px-BYD_Auto_logo_%282022%29.svg.png";
@@ -167,7 +167,6 @@ export default function CadastroCliente() {
     }
   };
 
-  // --- NOVA FUNÇÃO: APAGAR A LICENÇA ---
   const handleApagarLicenca = () => {
     Alert.alert(
       "Apagar Licença",
@@ -179,14 +178,9 @@ export default function CadastroCliente() {
           style: "destructive", 
           onPress: async () => {
             try {
-              // 1. Apaga do Firebase Storage
               const licencaRef = ref(storage, usuario.licenca);
               await deleteObject(licencaRef);
-
-              // 2. Remove do Firestore
               await updateDoc(doc(db, "usuarios", id as string), { licenca: "" });
-
-              // 3. Atualiza a tela
               setUsuario((prev: any) => ({ ...prev, licenca: "" }));
               Alert.alert("Sucesso", "Licença removida com sucesso!");
             } catch (error) {
@@ -208,16 +202,26 @@ export default function CadastroCliente() {
     }, [id])
   );
 
-  const getStatusInfo = (dataString: any) => {
-    if (!dataString) return { color: COLORS.textGray, icon: "help-circle" };
-    
-    const dataPrazo = moment(dataString, "YYYY-MM-DD");
+  // --- NOVA LÓGICA DE STATUS COM PRIORIDADE ---
+  const getStatusInfo = (item: any) => {
+    // 1. Verde (Cumpridas) - Prioridade 3
+    if (item.status === 'cumprida') {
+        return { color: COLORS.green, icon: "check-circle", order: 3 };
+    }
+
+    if (!item.data) return { color: COLORS.textGray, icon: "help-circle", order: 4 };
+
+    const dataPrazo = moment(item.data, "YYYY-MM-DD");
     const hoje = moment();
     const diasRestantes = dataPrazo.diff(hoje, "days");
 
-    if (dataPrazo.isBefore(hoje, 'day')) return { color: COLORS.red, icon: "alert-circle" };
-    if (diasRestantes <= 30) return { color: COLORS.orange, icon: "clock" };
-    return { color: COLORS.primary, icon: "check-circle" };
+    // 2. Vermelho (Vencidas ou <= 30 dias) - Prioridade 1
+    if (diasRestantes <= 30) {
+        return { color: COLORS.red, icon: "alert-circle", order: 1 };
+    }
+    
+    // 3. Amarelo (No prazo, > 30 dias) - Prioridade 2
+    return { color: COLORS.orange, icon: "clock", order: 2 };
   };
 
   const handleContato = (telefone: string) => {
@@ -246,10 +250,7 @@ export default function CadastroCliente() {
               key={imagemFinalUri} 
               source={{ uri: imagemFinalUri }} 
               style={styles.avatar}
-              onError={() => {
-                console.log("Falha ao baixar foto do Firebase, usando placeholder...");
-                setImageError(true);
-              }}
+              onError={() => setImageError(true)}
             />
           </View>
           <Text style={styles.companyName}>
@@ -285,13 +286,21 @@ export default function CadastroCliente() {
         <View style={styles.listContainer}>
           {condicionantes.length > 0 ? (
             condicionantes
+              // --- ORDENAÇÃO: Criticas(1) -> Seguras(2) -> Cumpridas(3) ---
               .sort((a, b) => {
+                const statusA = getStatusInfo(a);
+                const statusB = getStatusInfo(b);
+                
+                if (statusA.order !== statusB.order) {
+                    return statusA.order - statusB.order;
+                }
+                
                 const timeA = a.data ? moment(a.data, "YYYY-MM-DD").valueOf() : 0;
                 const timeB = b.data ? moment(b.data, "YYYY-MM-DD").valueOf() : 0;
                 return timeA - timeB;
               })
               .map((item, index) => {
-                const { color, icon } = getStatusInfo(item.data);
+                const { color, icon } = getStatusInfo(item); // Puxa do objeto inteiro
                 const isLast = index === condicionantes.length - 1;
 
                 return (
@@ -335,7 +344,6 @@ export default function CadastroCliente() {
             )}
           </TouchableOpacity>
           
-          {/* --- NOVO LAYOUT: Card de Licença + Botão Apagar --- */}
           {usuario?.licenca && (
              <View style={styles.licenseRowContainer}>
                <TouchableOpacity 
@@ -404,8 +412,6 @@ const styles = StyleSheet.create({
   footerContainer: { marginTop: 24, paddingHorizontal: 20 },
   largeButton: { width: "100%", height: 50, borderRadius: 25, borderWidth: 1, borderColor: COLORS.primary, justifyContent: "center", alignItems: "center", backgroundColor: "transparent" },
   largeButtonText: { color: COLORS.primary, fontSize: 16, fontWeight: "bold" },
-  
-  // --- NOVOS ESTILOS PARA ACOMODAR A LIXEIRA DA LICENÇA ---
   licenseRowContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 16 },
   licenseCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
   licenseCardIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#ECFDF5', justifyContent: 'center', alignItems: 'center' },
