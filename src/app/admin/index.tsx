@@ -22,10 +22,11 @@ const StatusCard = ({ icon, color, title, subtitle, onPress }: any) => (
         activeOpacity={0.7}
     >
         <Feather name={icon} size={24} color={color} style={{ marginRight: 15 }} />
-        <View>
+        <View style={{ flex: 1 }}>
             <Text style={styles.statusTitle}>{title}</Text>
             {subtitle ? <Text style={styles.statusSubtitle}>{subtitle}</Text> : null}
         </View>
+        <Feather name="chevron-right" size={20} color="#9CA3AF" />
     </TouchableOpacity>
 );
 
