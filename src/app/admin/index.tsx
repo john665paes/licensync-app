@@ -254,7 +254,7 @@ export default function IndexADM() {
                     color="#EF4444" // Vermelho
                     title="Atenção Necessária"
                     subtitle={`${countCriticas} ${countCriticas === 1 ? 'condicionante crítica' : 'condicionantes críticas'}`}
-                    onPress={() => router.push('/admin/listaVencidos')}
+                   onPress={() => router.push('/admin/listaCondicionantes?tipo=criticas')}
                 />
 
                 <StatusCard
@@ -262,7 +262,7 @@ export default function IndexADM() {
                     color="#F59E0B" // Amarelo/Laranja
                     title="No Prazo"
                     subtitle={`${countSeguras} ${countSeguras === 1 ? 'condicionante no prazo' : 'condicionantes no prazo'}`}
-                    onPress={() => router.push('/admin/listaPendentes')}
+                    onPress={() => router.push('/admin/listaCondicionantes?tipo=seguras')}
                 />
 
                 <StatusCard
@@ -270,7 +270,7 @@ export default function IndexADM() {
                     color="#10B981" // Verde
                     title="Condicionantes Cumpridas"
                     subtitle={`${countCumpridas} ${countCumpridas === 1 ? 'condicionante concluída' : 'condicionantes concluídas'}`}
-                    onPress={() => router.push('/admin/listaAprovados')}
+                    onPress={() => router.push('/admin/listaCondicionantes?tipo=cumpridas')}
                 />
             </View>
 
