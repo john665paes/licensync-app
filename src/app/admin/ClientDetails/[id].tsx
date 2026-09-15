@@ -202,9 +202,7 @@ export default function CadastroCliente() {
     }, [id])
   );
 
-  // --- NOVA LÓGICA DE STATUS COM PRIORIDADE ---
   const getStatusInfo = (item: any) => {
-    // 1. Verde (Cumpridas) - Prioridade 3
     if (item.status === 'cumprida') {
         return { color: COLORS.green, icon: "check-circle", order: 3 };
     }
@@ -215,12 +213,10 @@ export default function CadastroCliente() {
     const hoje = moment();
     const diasRestantes = dataPrazo.diff(hoje, "days");
 
-    // 2. Vermelho (Vencidas ou <= 30 dias) - Prioridade 1
     if (diasRestantes <= 30) {
         return { color: COLORS.red, icon: "alert-circle", order: 1 };
     }
     
-    // 3. Amarelo (No prazo, > 30 dias) - Prioridade 2
     return { color: COLORS.orange, icon: "clock", order: 2 };
   };
 
@@ -286,7 +282,6 @@ export default function CadastroCliente() {
         <View style={styles.listContainer}>
           {condicionantes.length > 0 ? (
             condicionantes
-              // --- ORDENAÇÃO: Criticas(1) -> Seguras(2) -> Cumpridas(3) ---
               .sort((a, b) => {
                 const statusA = getStatusInfo(a);
                 const statusB = getStatusInfo(b);
@@ -300,26 +295,38 @@ export default function CadastroCliente() {
                 return timeA - timeB;
               })
               .map((item, index) => {
-                const { color, icon } = getStatusInfo(item); // Puxa do objeto inteiro
+                const { color, icon } = getStatusInfo(item); 
                 const isLast = index === condicionantes.length - 1;
+                
+                // MÁGICA DO SINO: É cumprida E o Admin ainda não viu?
+                const isUnread = item.status === 'cumprida' && item.adminVisualizou === false;
 
                 return (
                   <TouchableOpacity
                     key={item.id || index}
-                    style={[styles.listItem, !isLast && styles.separator]}
+                    style={[styles.listItem, !isLast && styles.separator, isUnread && styles.unreadItem]}
                     onPress={() => router.push(`/admin/detalheCondicionante?clienteId=${id}&condicionanteId=${item.id}`)}
                   >
                     <View style={styles.iconWrapper}>
                       <Feather name={icon as any} size={24} color={color} />
                     </View>
                     <View style={styles.textWrapper}>
-                      <Text style={styles.itemTitle} numberOfLines={1}>
+                      <Text style={[styles.itemTitle, isUnread && { fontWeight: "bold" }]} numberOfLines={1}>
                         {item.condicionante || "Sem título"}
                       </Text>
                       <Text style={styles.itemDate}>
                         Prazo: {item.data ? moment(item.data, "YYYY-MM-DD").format("DD/MM/YYYY") : "--/--/----"}
                       </Text>
                     </View>
+                    
+                    {/* SINO DE NOTIFICAÇÃO DO ADMIN */}
+                    {isUnread && (
+                      <View style={styles.notificationBell}>
+                        <Feather name="bell" size={16} color={COLORS.red} />
+                        <View style={styles.notificationDot} />
+                      </View>
+                    )}
+                    
                     <Feather name="chevron-right" size={20} color={COLORS.textGray} />
                   </TouchableOpacity>
                 );
@@ -418,5 +425,10 @@ const styles = StyleSheet.create({
   licenseCardText: { flex: 1, marginLeft: 12 },
   licenseCardTitle: { fontSize: 16, fontWeight: '600', color: COLORS.textDark },
   licenseCardSubtitle: { fontSize: 13, color: COLORS.textGray, marginTop: 2 },
-  deleteLicenseBtn: { marginLeft: 12, backgroundColor: '#FEF2F2', width: 56, height: 56, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FEE2E2' }
+  deleteLicenseBtn: { marginLeft: 12, backgroundColor: '#FEF2F2', width: 56, height: 56, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FEE2E2' },
+  
+  // ESTILOS DO SINO
+  unreadItem: { backgroundColor: '#FEF2F2' },
+  notificationBell: { marginRight: 10, position: 'relative' },
+  notificationDot: { position: 'absolute', top: 0, right: 0, width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.red, borderWidth: 1, borderColor: COLORS.white },
 });
