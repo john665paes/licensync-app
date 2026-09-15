@@ -15,7 +15,7 @@ import { ScreenContainer } from "../../componentes/ScreenContainerpags";
 import HomeHeader from "../../componentes/Headerprofile";
 import { theme } from "../../estilos/themes";
 
-const StatusCard = ({ icon, color, title, subtitle, onPress }) => (
+const StatusCard = ({ icon, color, title, subtitle, onPress }: any) => (
     <TouchableOpacity
         style={[styles.statusCard, { borderLeftColor: color }]}
         onPress={onPress}
@@ -30,7 +30,7 @@ const StatusCard = ({ icon, color, title, subtitle, onPress }) => (
 );
 
 // --- COMPONENTE ClientItem ATUALIZADO ---
-const ClientItem = ({ data, onPress }) => {
+const ClientItem = ({ data, onPress }: any) => {
     // Tenta pegar a foto de perfil usando as duas nomenclaturas possíveis
     const fotoUri = data.fotoPerfilCliente || data.fotoPerfil;
 
@@ -62,10 +62,13 @@ export default function IndexADM() {
     const [nomeUsuario, setNomeUsuario] = useState('');
     const [imageUri, setImageUri] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [listaClientes, setListaClientes] = useState([]);
-    const [countVencidos, setCountVencidos] = useState(0);
-    const [countPendentes, setCountPendentes] = useState(0);
-    const [countAprovados, setCountAprovados] = useState(0);
+    const [listaClientes, setListaClientes] = useState<any[]>([]);
+    
+    // --- NOVOS CONTADORES NO PADRÃO DO SISTEMA ---
+    const [countCriticas, setCountCriticas] = useState(0);   // Vermelhas
+    const [countSeguras, setCountSeguras] = useState(0);     // Amarelas
+    const [countCumpridas, setCountCumpridas] = useState(0); // Verdes
+    
     const [searchText, setSearchText] = useState('');
 
     useFocusEffect(
@@ -77,7 +80,7 @@ export default function IndexADM() {
 
                     let usuarioLogadoNome = '';
                     let usuarioLogadoFoto = null;
-                    const listaTodosUsuarios = [];
+                    const listaTodosUsuarios: any[] = [];
 
                     snapshot.forEach((doc) => {
                         const data = doc.data();
@@ -101,35 +104,42 @@ export default function IndexADM() {
 
                     setListaClientes(clientesFiltrados);
 
-                    let vencidosTemp = 0;
-                    let pendentesTemp = 0;
-                    let aprovadosTemp = 0;
+                    // Variáveis temporárias para a contagem
+                    let criticasTemp = 0;
+                    let segurasTemp = 0;
+                    let cumpridasTemp = 0;
                     const hoje = moment();
                     
+                    // Varre todos os clientes para somar as condicionantes
                     for (const cliente of clientesFiltrados) {
                         const condicionantesRef = collection(db, "usuarios", cliente.id, "condicionantes");
                         const snapshotCondicionantes = await getDocs(condicionantesRef);
 
                         snapshotCondicionantes.forEach((docCond) => {
-                            const dataString = docCond.data().data;
-                            if (!dataString) return;
-
-                            const dataPrazo = moment(dataString, "YYYY-MM-DD");
-                            const diasRestantes = dataPrazo.diff(hoje, "days");
-
-                            if (dataPrazo.isBefore(hoje, 'day')) {
-                                vencidosTemp++; 
-                            } else if (diasRestantes <= 30) {
-                                pendentesTemp++; 
+                            const data = docCond.data();
+                            
+                            // Lógica idêntica a do cliente
+                            if (data.status === 'cumprida') {
+                                cumpridasTemp++; // É Verde!
                             } else {
-                                aprovadosTemp++; 
+                                const dataString = data.data;
+                                if (!dataString) return;
+
+                                const dataPrazo = moment(dataString, "YYYY-MM-DD");
+                                const diasRestantes = dataPrazo.diff(hoje, "days");
+
+                                if (diasRestantes <= 30) {
+                                    criticasTemp++; // É Vermelho! (Vencidas ou <= 30 dias)
+                                } else {
+                                    segurasTemp++;  // É Amarelo! (> 30 dias)
+                                }
                             }
                         });
                     }
 
-                    setCountVencidos(vencidosTemp);
-                    setCountPendentes(pendentesTemp);
-                    setCountAprovados(aprovadosTemp);
+                    setCountCriticas(criticasTemp);
+                    setCountSeguras(segurasTemp);
+                    setCountCumpridas(cumpridasTemp);
 
                 } catch (error) {
                     console.log("Erro ao buscar dados:", error);
@@ -140,11 +150,10 @@ export default function IndexADM() {
         }, []) 
     );
 
-    const uploadImageToFirebase = async (uriLocal) => {
+    const uploadImageToFirebase = async (uriLocal: any) => {
         if (!uriLocal) return;
         setLoading(true);
         try {
-            // --- BLOB CORRIGIDO PARA EVITAR CORRUPÇÃO DA FOTO DO ADMIN TAMBÉM ---
             const blob: any = await new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.onload = function () {
@@ -159,14 +168,16 @@ export default function IndexADM() {
                 xhr.send(null);
             });
 
-            const filename = `perfil/${auth.currentUser.uid}.jpg`;
+            const filename = `perfil/${auth.currentUser?.uid}.jpg`;
             const storageRef = ref(storage, filename);
             await uploadBytes(storageRef, blob);
             const downloadUrl = await getDownloadURL(storageRef);
 
-            const userDocRef = doc(db, "usuarios", auth.currentUser.uid);
-            await updateDoc(userDocRef, { fotoPerfil: downloadUrl });
-            Alert.alert("Sucesso", "Foto atualizada!");
+            if(auth.currentUser){
+                const userDocRef = doc(db, "usuarios", auth.currentUser.uid);
+                await updateDoc(userDocRef, { fotoPerfil: downloadUrl });
+                Alert.alert("Sucesso", "Foto atualizada!");
+            }
         } catch (error) {
             console.error(error);
             Alert.alert("Erro", "Falha no upload.");
@@ -181,7 +192,7 @@ export default function IndexADM() {
             allowsEditing: true, aspect: [1, 1], quality: 0.5,
         });
         if (!result.canceled) {
-            setImageUri(result.assets[0].uri);
+            setImageUri(result.assets[0].uri as any);
             await uploadImageToFirebase(result.assets[0].uri);
         }
     };
@@ -194,7 +205,7 @@ export default function IndexADM() {
             allowsEditing: true, aspect: [1, 1], quality: 0.5,
         });
         if (!result.canceled) {
-            setImageUri(result.assets[0].uri);
+            setImageUri(result.assets[0].uri as any);
             await uploadImageToFirebase(result.assets[0].uri);
         }
     };
@@ -235,28 +246,29 @@ export default function IndexADM() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
         >
+            {/* CARDS ATUALIZADOS */}
             <View style={{ marginTop: 10 }}>
                 <StatusCard
                     icon="alert-triangle"
-                    color="#DC2626"
-                    title="Condicionantes vencendo"
-                    subtitle={`${countVencidos} ${countVencidos === 1 ? 'condicionante' : 'condicionantes'}`}
+                    color="#EF4444" // Vermelho
+                    title="Atenção Necessária"
+                    subtitle={`${countCriticas} ${countCriticas === 1 ? 'condicionante crítica' : 'condicionantes críticas'}`}
                     onPress={() => router.push('/admin/listaVencidos')}
                 />
 
                 <StatusCard
                     icon="clock"
-                    color="#F59E0B"
-                    title="Documentos pendentes"
-                    subtitle={`${countPendentes} ${countPendentes === 1 ? 'documento' : 'documentos'}`}
+                    color="#F59E0B" // Amarelo/Laranja
+                    title="No Prazo"
+                    subtitle={`${countSeguras} ${countSeguras === 1 ? 'condicionante no prazo' : 'condicionantes no prazo'}`}
                     onPress={() => router.push('/admin/listaPendentes')}
                 />
 
                 <StatusCard
                     icon="check-circle"
-                    color="#10B981"
-                    title="Relatórios Aprovados"
-                    subtitle={`${countAprovados} ${countAprovados === 1 ? 'relatório' : 'relatórios'}`}
+                    color="#10B981" // Verde
+                    title="Condicionantes Cumpridas"
+                    subtitle={`${countCumpridas} ${countCumpridas === 1 ? 'condicionante concluída' : 'condicionantes concluídas'}`}
                     onPress={() => router.push('/admin/listaAprovados')}
                 />
             </View>
